@@ -6,5 +6,5 @@ html {
 }
 
 @theme {
-    
+    --font-jetbrains-mono: "JetBrains Mono", monospace;
 }

@@ -60,12 +60,14 @@ function NavLink({ label, href, isScrolled }: NavLinkProps) {
     : "bg-transparent";
 
   return (
-    <Link
-      className={`font-semibold text-gray-50 md:px-4 md:py-2 dark:text-white ${baseBgColor} rounded-full text-2xl transition-colors duration-200 md:text-base md:[&:hover,&:active]:bg-blue-700 md:[&:hover,&:active]:text-white dark:md:[&:hover,&:active]:bg-white dark:md:[&:hover,&:active]:text-black`}
-      to={href}
-    >
-      {label}
-    </Link>
+    <li className="navlink__item">
+      <Link
+        className={`font-semibold text-gray-50 md:px-4 md:py-2 dark:text-white ${baseBgColor} rounded-full text-2xl transition-colors duration-200 md:text-base md:[&:hover,&:active]:bg-blue-700 md:[&:hover,&:active]:text-white dark:md:[&:hover,&:active]:bg-white dark:md:[&:hover,&:active]:text-black`}
+        to={href}
+      >
+        {label}
+      </Link>
+    </li>
   );
 }
 
@@ -103,11 +105,16 @@ export default function Navbar() {
           />
           <PageLogo />
         </div>
-        <div
+        <ul
           className={`navbar__links ${!isMobileNavOpen && "hidden md:flex"} mt-12 mr-1 flex flex-col gap-8 md:mt-0 md:h-fit md:flex-row md:flex-wrap md:gap-4`}
         >
-          <NavLink label="Sign In" href="login" isScrolled={isScrolled} />
-        </div>
+          <NavLink label="Home" href="/" isScrolled={isScrolled} />
+          <NavLink
+            label={isMobileNavOpen ? "Sign In / Register" : "Sign In"}
+            href="login"
+            isScrolled={isScrolled}
+          />
+        </ul>
       </nav>
     </header>
   );
