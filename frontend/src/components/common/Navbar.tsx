@@ -111,7 +111,7 @@ export default function Navbar() {
           <NavLink label="Home" href="/" isScrolled={isScrolled} />
           <NavLink
             label={isMobileNavOpen ? "Sign In / Register" : "Sign In"}
-            href="login"
+            href="/login"
             isScrolled={isScrolled}
           />
         </ul>

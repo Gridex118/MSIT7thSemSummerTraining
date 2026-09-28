@@ -21,7 +21,7 @@ function HeroBanner() {
 export default function Hero() {
   return (
     <section
-      id="app__hero"
+      id="app-section-hero"
       className="container m-auto flex h-screen max-w-200 flex-col justify-center gap-12 p-8 font-semibold text-white"
     >
       <HeroBanner />

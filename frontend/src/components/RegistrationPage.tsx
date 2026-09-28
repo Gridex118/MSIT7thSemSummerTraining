@@ -1,0 +1,123 @@
+import { Link } from "react-router";
+import Navbar from "./common/Navbar";
+import Footer from "./common/Footer";
+import React, { useState, type SetStateAction } from "react";
+
+type RegistrationFormFieldProps = {
+  name: string;
+  value: string;
+  setValue: React.Dispatch<SetStateAction<string>>;
+  placeholder: string;
+  fieldType?: string;
+};
+function RegistrationFormField({
+  name,
+  value,
+  setValue,
+  placeholder,
+  fieldType,
+}: RegistrationFormFieldProps) {
+  return (
+    <input
+      className="rounded-full border border-blue-300 p-2 px-4 text-sm font-semibold outline-0 focus:border-blue-100 dark:border-gray-700 focus:dark:border-gray-500"
+      name={name}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      placeholder={placeholder}
+      type={fieldType ? fieldType : "text"}
+    />
+  );
+}
+
+function RegistrationForm() {
+  const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
+
+  return (
+    <form
+      className="flex flex-col justify-center gap-8 px-4 py-8 md:min-w-80 lg:min-w-90"
+      id="login-form"
+    >
+      <p className="self-center text-xl font-bold md:text-2xl">
+        Create an Account
+      </p>
+      <div className="flex flex-col gap-2">
+        <RegistrationFormField
+          value={fullName}
+          setValue={setFullName}
+          name="register-full-name"
+          placeholder="Full Name"
+        />
+        <RegistrationFormField
+          value={username}
+          setValue={setUsername}
+          name="register-username"
+          placeholder="Username"
+        />
+        <RegistrationFormField
+          value={email}
+          setValue={setEmail}
+          name="register-email"
+          placeholder="Email"
+          fieldType="mail"
+        />
+        <RegistrationFormField
+          value={password}
+          setValue={setPassword}
+          name="register-password"
+          placeholder="Password"
+          fieldType="password"
+        />
+        <RegistrationFormField
+          value={repeatPassword}
+          setValue={setRepeatPassword}
+          name="register-password-confirm"
+          placeholder="Retype Password"
+          fieldType="password"
+        />
+      </div>
+      <div>
+        <button className="w-full rounded-full border border-blue-300 bg-white p-2 text-sm font-bold text-blue-500 md:text-base dark:border-gray-700 dark:text-black">
+          Create Account
+        </button>
+        <p className="mt-2 text-center text-sm font-bold dark:text-gray-400">
+          Already have an account?{" "}
+          <Link
+            className="dark:text-white [&:hover,&:active]:underline"
+            to="/login"
+          >
+            Sign In
+          </Link>
+        </p>
+      </div>
+    </form>
+  );
+}
+
+function AsideQuoteHolder() {
+  return (
+    <div className="h-70 rounded-xl bg-blue-500 text-blue-500 md:h-120 md:w-80 dark:bg-gray-600 dark:text-black"></div>
+  );
+}
+
+function RegistrationFormContainer() {
+  return (
+    <div className="mx-auto my-24 flex w-[90%] max-w-200 flex-col rounded-xl bg-blue-600 p-2 text-white shadow-lg shadow-blue-700/40 md:flex-row md:justify-between md:p-4 dark:bg-black dark:shadow-black/60">
+      <RegistrationForm />
+      <AsideQuoteHolder />
+    </div>
+  );
+}
+
+export default function RegistrationPage() {
+  return (
+    <div className="flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
+      <Navbar />
+      <RegistrationFormContainer />
+      <Footer />
+    </div>
+  );
+}
