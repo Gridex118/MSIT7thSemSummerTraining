@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import Navbar from "./common/Navbar";
+import Navbar, { type NavbarLinkType } from "./common/Navbar";
 import Footer from "./common/Footer";
 import React, { useState, type SetStateAction } from "react";
 
@@ -113,9 +113,11 @@ function RegistrationFormContainer() {
 }
 
 export default function RegistrationPage() {
+  const navbarLinks: NavbarLinkType[] = [{ label: "Home", href: "/" }];
+
   return (
     <div className="flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
-      <Navbar />
+      <Navbar links={navbarLinks} forcesdBGColor="bg-blue-500 dark:bg-black" />
       <RegistrationFormContainer />
       <Footer />
     </div>

@@ -71,7 +71,13 @@ function NavLink({ label, href, isScrolled }: NavLinkProps) {
   );
 }
 
-export default function Navbar() {
+export type NavbarLinkType = { label: string; href: string };
+type NavbarProps = {
+  links: NavbarLinkType[];
+  forcesdBGColor?: string;
+};
+
+export default function Navbar({ links, forcesdBGColor }: NavbarProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollPercent, setScrollPercent] = useState(1);
@@ -91,7 +97,7 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 z-1 w-full place-items-center bg-transparent ${isMobileNavOpen && "h-screen backdrop-blur-md"} transition md:sticky md:grid md:h-fit md:py-2 md:backdrop-blur-none`}
+      className={`fixed top-0 left-0 z-1 w-full place-items-center ${forcesdBGColor ? forcesdBGColor : "bg-transparent"} ${isMobileNavOpen && "h-screen backdrop-blur-md"} transition md:sticky md:grid md:h-fit md:py-2 md:backdrop-blur-none`}
     >
       <MobileProgressBar scrollPercent={scrollPercent} />
       <nav
@@ -108,12 +114,14 @@ export default function Navbar() {
         <ul
           className={`navbar__links ${!isMobileNavOpen && "hidden md:flex"} mt-12 mr-1 flex flex-col gap-8 md:mt-0 md:h-fit md:flex-row md:flex-wrap md:gap-4`}
         >
-          <NavLink label="Home" href="/" isScrolled={isScrolled} />
-          <NavLink
-            label={isMobileNavOpen ? "Sign In / Register" : "Sign In"}
-            href="/login"
-            isScrolled={isScrolled}
-          />
+          {links.map(({ label, href }) => (
+            <NavLink
+              key={label}
+              label={label}
+              href={href}
+              isScrolled={isScrolled}
+            />
+          ))}
         </ul>
       </nav>
     </header>
