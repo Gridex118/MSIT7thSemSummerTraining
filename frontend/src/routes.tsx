@@ -2,6 +2,7 @@ import BookPage from "./components/books/BookPage";
 import BookSearchPage from "./components/books/BookSearchPage";
 import UserPage from "./components/people/UserPage";
 import GroupPage from "./components/people/GroupPage";
+import GroupListPage from "./components/people/GroupListPage";
 import LoginPage from "./components/LoginPage";
 import RegistrationPage from "./components/RegistrationPage";
 import App from "./App";
@@ -28,6 +29,10 @@ const routes = [
   {
     path: "group/:groupId",
     element: <GroupPage />,
+  },
+  {
+    path: "groups",
+    element: <GroupListPage />,
   },
   {
     path: "login",

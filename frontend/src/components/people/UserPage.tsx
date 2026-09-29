@@ -97,7 +97,12 @@ function UserBookList({ books }: { books: BookType[] }) {
 }
 
 export default function UserPage() {
-  const navbarLinks: NavbarLinkType[] = [{ label: "Home", href: "/" }];
+  const navbarLinks: NavbarLinkType[] = [
+    { label: "Home", href: "/" },
+    { label: "Profile", href: "/user/1" },
+    { label: "Books", href: "/books" },
+    { label: "Groups", href: "/groups" },
+  ];
 
   return (
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">

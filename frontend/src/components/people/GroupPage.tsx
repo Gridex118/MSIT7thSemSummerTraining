@@ -122,7 +122,12 @@ function DiscussionList({
 }
 
 export default function GroupPage() {
-  const navbarLinks: NavbarLinkType[] = [{ label: "Home", href: "/" }];
+  const navbarLinks: NavbarLinkType[] = [
+    { label: "Home", href: "/" },
+    { label: "Profile", href: "/user/1" },
+    { label: "Books", href: "/books" },
+    { label: "Groups", href: "/groups" },
+  ];
   const [selected, setSelected] = useState<DiscussionType | null>(null);
 
   return (

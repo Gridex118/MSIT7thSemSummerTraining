@@ -27,3 +27,9 @@ export type CommentType = {
   date: string;
   message: string;
 };
+
+export type GroupSummaryType = {
+  slug: string;
+  name: string;
+  members: number;
+};
