@@ -55,7 +55,7 @@ function LoginForm() {
         />
       </div>
       <div>
-        <button className="w-full rounded-full border border-blue-300 bg-white p-2 text-sm font-bold text-blue-500 md:text-base dark:border-gray-700 dark:text-black">
+        <button className="w-full rounded-full border border-blue-300 bg-white p-2 text-sm font-bold text-blue-500 transition md:text-base dark:border-gray-700 dark:text-black [&:active,&:hover]:-translate-y-1">
           Login
         </button>
         <p className="mt-2 text-center text-sm font-bold dark:text-gray-400">
