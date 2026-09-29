@@ -21,3 +21,10 @@ export type BookCommunityType = {
   similarBooks: SimilarBookType[];
   reviews: ReviewType[];
 };
+
+export type SearchResultType = {
+  slug: string;
+  title: string;
+  author: string;
+  genres: string[];
+};

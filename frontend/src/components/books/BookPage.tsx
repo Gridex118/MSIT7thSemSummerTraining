@@ -221,13 +221,17 @@ function BookSidePanel({ isLoggedIn }: BookSidePanelProps) {
 }
 
 export default function BookPage() {
-  const navbarLinks: NavbarLinkType[] = [{ label: "Home", href: "/" }];
-  const isLoggedIn = true;
+  const navbarLinks: NavbarLinkType[] = [
+    { label: "Home", href: "/" },
+    { label: "Books", href: "/books" },
+    { label: "Sign In", href: "/login" },
+  ];
+  const isLoggedIn = false;
 
   return (
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
       <Navbar links={navbarLinks} />
-      <main className="container mx-auto mt-4 mb-24 grid grid-cols-1 gap-4 p-4 sm:gap-2 sm:p-0 md:grid-cols-[1fr_2fr] lg:gap-4">
+      <main className="container mx-auto mt-16 mb-24 grid grid-cols-1 gap-4 p-4 sm:mt-4 sm:gap-2 sm:p-0 md:grid-cols-[1fr_2fr] lg:gap-4">
         <BookSidePanel isLoggedIn={isLoggedIn} />
         <div className="flex flex-col gap-6 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 md:self-start dark:bg-black dark:shadow-black/60">
           <BookDetailsSection book={placeholderBook} />

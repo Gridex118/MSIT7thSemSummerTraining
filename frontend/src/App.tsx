@@ -5,6 +5,7 @@ import Hero from "./components/Hero";
 function App() {
   const navbarLinks: NavbarLinkType[] = [
     { label: "Home", href: "/" },
+    { label: "Books", href: "/books" },
     { label: "Sign In", href: "/login" },
   ];
 

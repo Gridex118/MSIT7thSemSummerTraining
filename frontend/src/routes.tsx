@@ -1,4 +1,5 @@
 import BookPage from "./components/books/BookPage";
+import BookSearchPage from "./components/books/BookSearchPage";
 import UserPage from "./components/people/UserPage";
 import GroupPage from "./components/people/GroupPage";
 import LoginPage from "./components/LoginPage";
@@ -11,6 +12,10 @@ const routes = [
     path: "/",
     element: <App />,
     errorElement: <ErrorPage />,
+  },
+  {
+    path: "books",
+    element: <BookSearchPage />,
   },
   {
     path: "book/:bookId",

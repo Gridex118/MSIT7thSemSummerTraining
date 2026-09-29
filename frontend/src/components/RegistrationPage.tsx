@@ -113,7 +113,10 @@ function RegistrationFormContainer() {
 }
 
 export default function RegistrationPage() {
-  const navbarLinks: NavbarLinkType[] = [{ label: "Home", href: "/" }];
+  const navbarLinks: NavbarLinkType[] = [
+    { label: "Home", href: "/" },
+    { label: "Books", href: "/books" },
+  ];
 
   return (
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
