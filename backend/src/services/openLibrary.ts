@@ -1,10 +1,12 @@
+import "dotenv/config";
+
 const SEARCH_BASE_URL = "https://openlibrary.org/search.json";
 const WORK_BASE_URL = "https://openlibrary.org/works";
 const COVERS_BASE_URL = "http://covers.openlibrary.org/b";
 const COVERS_OLID_URL = `${COVERS_BASE_URL}/olid`;
 
 const REQUEST_HEADERS = {
-  "User-Agent": "BooksGroup/0.1 (example@example.org)",
+  "User-Agent": `BooksGroup/0.1 (${process.env.USER_EMAIL ?? "example@example.org"})`,
 };
 
 export type OpenLibraryAuthorIdentityType = {
