@@ -84,7 +84,7 @@ export default function Navbar({ links, forcesdBGColor }: NavbarProps) {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      setIsScrolled(window.scrollY > 20);
       const scrollTop = window.scrollY;
       const docHeight = document.body.offsetHeight;
       const winHeight = window.innerHeight;
@@ -97,12 +97,12 @@ export default function Navbar({ links, forcesdBGColor }: NavbarProps) {
 
   return (
     <header
-      className={`fixed top-0 left-0 z-1 w-full place-items-center ${forcesdBGColor && !isScrolled ? forcesdBGColor : "bg-transparent"} ${isMobileNavOpen && "h-screen backdrop-blur-md"} transition md:sticky md:grid md:h-fit md:py-2 md:backdrop-blur-none`}
+      className={`fixed top-0 left-0 z-1 w-full place-items-center ${forcesdBGColor && !isScrolled ? forcesdBGColor : "bg-transparent"} ${isMobileNavOpen && "h-screen backdrop-blur-md"} transition duration-200 md:sticky md:grid md:h-fit md:py-2 md:backdrop-blur-none`}
     >
       <MobileProgressBar scrollPercent={scrollPercent} />
       <nav
         id="navbar"
-        className={`navbar flex h-full w-full max-w-200 flex-col items-start gap-6 rounded-full p-2 md:w-[95%] md:flex-row md:items-center md:justify-between md:gap-0 md:border md:backdrop-blur-md ${isScrolled && "md:shadow-md"} shadow-gray-400/40 transition duration-100 dark:shadow-black/40 ${isScrolled ? "border-gray-300/60 md:bg-white/20 dark:border-[#505050]/40 dark:md:bg-black/40" : "border-transparent md:bg-transparent"}`}
+        className={`navbar flex h-full w-full max-w-200 flex-col items-start gap-6 rounded-full p-2 md:w-[95%] md:flex-row md:items-center md:justify-between md:gap-0 md:border ${isScrolled && "md:shadow-md md:backdrop-blur-md"} shadow-gray-400/40 transition duration-200 dark:shadow-black/40 ${isScrolled ? "border-gray-300/60 md:bg-white/20 dark:border-[#505050]/40 dark:md:bg-black/40" : "border-transparent md:bg-transparent"}`}
       >
         <div className="flex items-center gap-4">
           <MobileNavMenuButton
