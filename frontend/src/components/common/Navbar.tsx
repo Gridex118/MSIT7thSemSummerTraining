@@ -97,7 +97,7 @@ export default function Navbar({ links, forcesdBGColor }: NavbarProps) {
 
   return (
     <header
-      className={`fixed top-0 left-0 z-1 w-full place-items-center ${forcesdBGColor ? forcesdBGColor : "bg-transparent"} ${isMobileNavOpen && "h-screen backdrop-blur-md"} transition md:sticky md:grid md:h-fit md:py-2 md:backdrop-blur-none`}
+      className={`fixed top-0 left-0 z-1 w-full place-items-center ${forcesdBGColor && !isScrolled ? forcesdBGColor : "bg-transparent"} ${isMobileNavOpen && "h-screen backdrop-blur-md"} transition md:sticky md:grid md:h-fit md:py-2 md:backdrop-blur-none`}
     >
       <MobileProgressBar scrollPercent={scrollPercent} />
       <nav

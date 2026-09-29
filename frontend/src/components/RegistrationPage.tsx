@@ -117,7 +117,10 @@ export default function RegistrationPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
-      <Navbar links={navbarLinks} forcesdBGColor="bg-blue-500 dark:bg-black" />
+      <Navbar
+        links={navbarLinks}
+        forcesdBGColor="md:bg-blue-500 md:dark:bg-black"
+      />
       <RegistrationFormContainer />
       <Footer />
     </div>
