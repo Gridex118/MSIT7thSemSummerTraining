@@ -1,35 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
 import type { SearchResultType } from "./types";
+import type { OpenLibraryBookType } from "../../../../backend/src/services/openLibrary";
 
-const placeholderResults: SearchResultType[] = [
-  {
-    slug: "the-hobbit",
-    title: "The Hobbit",
-    author: "J.R.R. Tolkien",
-    genres: ["Fantasy", "Adventure", "Classic"],
-  },
-  {
-    slug: "the-fellowship-of-the-ring",
-    title: "The Fellowship of the Ring",
-    author: "J.R.R. Tolkien",
-    genres: ["Fantasy", "Adventure"],
-  },
-  {
-    slug: "the-name-of-the-wind",
-    title: "The Name of the Wind",
-    author: "Patrick Rothfuss",
-    genres: ["Fantasy", "Adventure"],
-  },
-  {
-    slug: "dune",
-    title: "Dune",
-    author: "Frank Herbert",
-    genres: ["Science Fiction", "Classic"],
-  },
-];
+const SEARCH_URL = "/v1/openLibrary/search";
 
 function SearchBar({ onSearch }: { onSearch: (query: string) => void }) {
   const [query, setQuery] = useState("");
@@ -74,7 +50,7 @@ function SearchResultCard({ book }: { book: SearchResultType }) {
         </p>
       </div>
       <ul className="flex flex-wrap gap-2">
-        {book.genres.map((genre) => (
+        {book.genres.slice(0, 5).map((genre) => (
           <li
             key={genre}
             className="rounded-full border border-blue-300 px-3 py-1 text-xs font-semibold dark:border-gray-700"
@@ -118,16 +94,44 @@ export default function BookSearchPage() {
     { label: "Sign In", href: "/login" },
   ];
   const [results, setResults] = useState<SearchResultType[] | null>(null);
-  const handleSearch = (query: string) => {
-    const q = query.toLowerCase();
-    setResults(
-      placeholderResults.filter(
-        (book) =>
-          book.title.toLowerCase().includes(q) ||
-          book.author.toLowerCase().includes(q),
-      ),
-    );
-  };
+  const [query, setQuery] = useState("");
+  const [loadingResults, setLoadingResults] = useState(false);
+  const handleSearch = (newQuery: string) => setQuery(newQuery);
+
+  useEffect(() => {
+    if (!query) return;
+    let cancelled = false;
+    async function runSearch() {
+      setLoadingResults(true);
+      try {
+        const res = await fetch(`${SEARCH_URL}?q=${query}`);
+        if (res.status !== 200)
+          throw new Error(`Search failed with status ${res.status}`);
+        const books: OpenLibraryBookType[] = await res.json();
+        if (cancelled) {
+          setLoadingResults(false);
+          return;
+        }
+        setResults(
+          books.map((book) => ({
+            slug: book.editionKey,
+            title: book.title,
+            author: book.author.name,
+            genres: book.subjects ?? [],
+          })),
+        );
+        setLoadingResults(false);
+      } catch (err) {
+        console.error(err);
+        setLoadingResults(false);
+        if (!cancelled) setResults([]);
+      }
+    }
+    runSearch();
+    return () => {
+      cancelled = true;
+    };
+  }, [query]);
 
   return (
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
@@ -137,7 +141,11 @@ export default function BookSearchPage() {
       />
       <main className="container mx-auto my-24 flex max-w-200 flex-col gap-6 p-4 text-white sm:p-0 md:p-4">
         <SearchBar onSearch={handleSearch} />
-        <SearchResults results={results} />
+        {loadingResults ? (
+          <div>Loading Results</div>
+        ) : (
+          <SearchResults results={results} />
+        )}
       </main>
       <Footer />
     </div>
