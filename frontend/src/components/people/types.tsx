@@ -7,3 +7,16 @@ export type UserType = {
   groups: GroupType[];
   books: BookType[];
 };
+
+export type DiscussionType = {
+  id: number;
+  title: string;
+  bookTitle: string;
+};
+
+export type GroupDetailType = {
+  name: string;
+  description: string;
+  members: number;
+  discussions: DiscussionType[];
+};

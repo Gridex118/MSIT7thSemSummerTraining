@@ -1,5 +1,6 @@
 import BookPage from "./components/books/BookPage";
 import UserPage from "./components/people/UserPage";
+import GroupPage from "./components/people/GroupPage";
 import LoginPage from "./components/LoginPage";
 import RegistrationPage from "./components/RegistrationPage";
 import App from "./App";
@@ -12,12 +13,16 @@ const routes = [
     errorElement: <ErrorPage />,
   },
   {
-    path: "book/:bookName",
+    path: "book/:bookId",
     element: <BookPage />,
   },
   {
-    path: "user/:userName",
+    path: "user/:bookId",
     element: <UserPage />,
+  },
+  {
+    path: "group/:groupId",
+    element: <GroupPage />,
   },
   {
     path: "login",

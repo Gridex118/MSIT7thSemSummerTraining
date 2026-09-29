@@ -77,9 +77,12 @@ function UserSidePanel({ user }: { user: UserType }) {
 
 function UserBookCard({ book }: { book: BookType }) {
   return (
-    <div className="flex flex-col gap-4 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 dark:bg-black dark:shadow-black/60">
+    <Link
+      className="flex flex-col gap-4 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 dark:bg-black dark:shadow-black/60"
+      to={`/book/${book.title}`}
+    >
       <BookDescription book={book} />
-    </div>
+    </Link>
   );
 }
 
