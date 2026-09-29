@@ -225,7 +225,7 @@ export default function BookPage() {
   const isLoggedIn = true;
 
   return (
-    <div className="flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
+    <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
       <Navbar links={navbarLinks} />
       <main className="container mx-auto mt-4 mb-24 grid grid-cols-1 gap-4 p-4 sm:gap-2 sm:p-0 md:grid-cols-[1fr_2fr] lg:gap-4">
         <BookSidePanel isLoggedIn={isLoggedIn} />

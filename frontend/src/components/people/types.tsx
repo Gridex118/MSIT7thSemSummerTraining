@@ -20,3 +20,10 @@ export type GroupDetailType = {
   members: number;
   discussions: DiscussionType[];
 };
+
+export type CommentType = {
+  id: number;
+  user: string;
+  date: string;
+  message: string;
+};

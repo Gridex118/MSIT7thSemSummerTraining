@@ -116,7 +116,7 @@ export default function RegistrationPage() {
   const navbarLinks: NavbarLinkType[] = [{ label: "Home", href: "/" }];
 
   return (
-    <div className="flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
+    <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
       <Navbar
         links={navbarLinks}
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"
