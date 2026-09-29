@@ -72,7 +72,8 @@ function getOpenLibrarySearchRequestURL(
   offset: number,
 ): string {
   return (
-    `${SEARCH_BASE_URL}?q=${encodeURIComponent(query.toLocaleLowerCase())}` +
+    `${SEARCH_BASE_URL}?` +
+    `q=${encodeURIComponent(query.toLocaleLowerCase())}` +
     `&fields=key,title,author_name,author_key,editions,subject,number_of_pages_median` +
     `&language=eng` +
     `&limit=${limit}` +
@@ -85,7 +86,7 @@ export async function fetchOpenLibrarySearch(
   limit = 10,
   page = 1,
 ): Promise<null | OpenLibraryBookType[]> {
-  const url = getOpenLibrarySearchRequestURL(searchString, limit, page);
+  const url = getOpenLibrarySearchRequestURL(searchString, limit, page - 1);
   const response = await fetchOpenLibrary(url);
   const json: { docs: OpenLibrarySearchDocsType[] } = await response.json();
 
