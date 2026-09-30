@@ -1,3 +1,5 @@
+import type { OpenLibraryBookType } from "../../../../backend/src/services/openLibrary";
+
 export type BookType = {
   title: string;
   author: string;
@@ -8,7 +10,11 @@ export type BookType = {
   stats: { reading: number; read: number; wantToRead: number };
 };
 
-export type SimilarBookType = { slug: string; title: string; author: string };
+export type SimilarBookType = {
+  slug: string;
+  title: string;
+  author: string;
+};
 
 export type ReviewType = {
   id: number;
@@ -23,8 +29,10 @@ export type BookCommunityType = {
 };
 
 export type SearchResultType = {
-  slug: string;
+  workKey: string;
+  editionKey: string;
   title: string;
   author: string;
   genres: string[];
+  raw: OpenLibraryBookType;
 };

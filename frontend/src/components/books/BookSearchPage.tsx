@@ -41,7 +41,8 @@ function SearchResultCard({ book }: { book: SearchResultType }) {
   return (
     <Link
       className="flex flex-col gap-2 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 transition dark:bg-black dark:shadow-black/60 [&:active,&:hover]:-translate-y-1"
-      to={`/book/${book.slug}`}
+      to={`/book/${book.workKey}/${book.editionKey}`}
+      state={{ book: book.raw }}
     >
       <div>
         <p className="text-lg font-bold md:text-xl">{book.title}</p>
@@ -81,7 +82,7 @@ function SearchResults({ results }: { results: SearchResultType[] | null }) {
   return (
     <section className="flex flex-col gap-4">
       {results.map((book) => (
-        <SearchResultCard key={book.slug} book={book} />
+        <SearchResultCard key={book.editionKey} book={book} />
       ))}
     </section>
   );
@@ -114,10 +115,12 @@ export default function BookSearchPage() {
         }
         setResults(
           books.map((book) => ({
-            slug: book.editionKey,
+            workKey: book.workKey,
+            editionKey: book.editionKey,
             title: book.title,
             author: book.author.name,
             genres: book.subjects ?? [],
+            raw: book,
           })),
         );
         setLoadingResults(false);
@@ -142,7 +145,10 @@ export default function BookSearchPage() {
       <main className="container mx-auto my-24 flex max-w-200 flex-col gap-6 p-4 text-white sm:p-0 md:p-4">
         <SearchBar onSearch={handleSearch} />
         {loadingResults ? (
-          <div>Loading Results</div>
+          <div className="m-auto flex items-center gap-4">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+            Loading Results
+          </div>
         ) : (
           <SearchResults results={results} />
         )}

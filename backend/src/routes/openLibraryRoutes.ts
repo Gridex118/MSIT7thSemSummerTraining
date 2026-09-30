@@ -9,6 +9,6 @@ const router = express.Router();
 
 router.get("/search", searchBooks);
 router.get("/covers/:editionKey", getBookCover);
-router.get("/:workKey/description", getBookDescription);
+router.get("/description/:workKey", getBookDescription);
 
 export default router;

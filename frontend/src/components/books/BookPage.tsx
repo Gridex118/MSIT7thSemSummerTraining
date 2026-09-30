@@ -1,7 +1,7 @@
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
-import { useState } from "react";
-import { Link } from "react-router";
+import { useState, useEffect } from "react";
+import { Link, useParams, useLocation } from "react-router";
 import BookDescription from "./BookDescription";
 import type {
   BookType,
@@ -9,17 +9,10 @@ import type {
   SimilarBookType,
   ReviewType,
 } from "./types";
+import type { OpenLibraryBookType } from "../../../../backend/src/services/openLibrary";
 
-const placeholderBook: BookType = {
-  title: "The Hobbit",
-  author: "J.R.R. Tolkien",
-  description:
-    "Bilbo Baggins is swept into an unexpected journey to reclaim a lost dwarf kingdom from the dragon Smaug.",
-  genres: ["Fantasy", "Adventure", "Classic"],
-  pages: 310,
-  firstPublished: "1937",
-  stats: { reading: 1204, read: 58320, wantToRead: 20418 },
-};
+const COVER_URL = "/v1/openLibrary/covers";
+const DESCR_URL = "/v1/openLibrary/description";
 
 const placeholderCommunity: BookCommunityType = {
   similarBooks: [
@@ -149,8 +142,22 @@ const statusLabels: Record<ReadingStatusType, string> = {
 };
 
 function CoverImage() {
+  const { editionKey } = useParams();
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const src = `${COVER_URL}/${editionKey}?size=L`;
+  console.log(src);
+
+  if (!editionKey || failedKey === editionKey)
+    return (
+      <div className="aspect-2/3 w-full rounded-xl bg-blue-500 text-blue-500 dark:bg-gray-600 dark:text-black"></div>
+    );
   return (
-    <div className="aspect-2/3 w-full rounded-xl bg-blue-500 text-blue-500 dark:bg-gray-600 dark:text-black"></div>
+    <img
+      className="aspect-2/3 w-full rounded-xl object-cover"
+      src={src}
+      alt="Book cover"
+      onError={() => setFailedKey(editionKey)}
+    />
   );
 }
 
@@ -220,6 +227,20 @@ function BookSidePanel({ isLoggedIn }: BookSidePanelProps) {
   );
 }
 
+const dummyStats = { reading: 1204, read: 58320, wantToRead: 20418 };
+
+function toBookType(raw: OpenLibraryBookType, description: string): BookType {
+  return {
+    title: raw.title,
+    author: raw.author.name,
+    description,
+    genres: raw.subjects.slice(0, 8) ?? [],
+    pages: raw.numPages,
+    firstPublished: "1937",
+    stats: dummyStats,
+  };
+}
+
 export default function BookPage() {
   const navbarLinks: NavbarLinkType[] = [
     { label: "Home", href: "/" },
@@ -227,6 +248,31 @@ export default function BookPage() {
     { label: "Sign In", href: "/login" },
   ];
   const isLoggedIn = false;
+  const location = useLocation();
+  const raw = location.state?.book as OpenLibraryBookType | undefined;
+  const [description, setDescription] = useState("");
+  const { workKey } = useParams();
+  useEffect(() => {
+    if (!workKey) return;
+    let cancelled = false;
+    async function loadDescription() {
+      try {
+        const res = await fetch(`${DESCR_URL}/${workKey}`);
+        if (res.status !== 200)
+          throw new Error(`Description failed with status ${res.status}`);
+        const json: { description: string | null } = await res.json();
+        if (!cancelled) setDescription(json.description ?? "");
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setDescription("");
+      }
+    }
+    loadDescription();
+    return () => {
+      cancelled = true;
+    };
+  }, [workKey]);
+  const book = raw ? toBookType(raw, description) : null;
 
   return (
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
@@ -234,7 +280,11 @@ export default function BookPage() {
       <main className="container mx-auto mt-16 mb-24 grid grid-cols-1 gap-4 p-4 sm:mt-4 sm:gap-2 sm:p-0 md:grid-cols-[1fr_2fr] lg:gap-4">
         <BookSidePanel isLoggedIn={isLoggedIn} />
         <div className="flex flex-col gap-6 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 md:self-start dark:bg-black dark:shadow-black/60">
-          <BookDetailsSection book={placeholderBook} />
+          {book ? (
+            <BookDetailsSection book={book} />
+          ) : (
+            <p className="text-sm font-bold">Book not found</p>
+          )}
           <BookCommunitySection community={placeholderCommunity} />
         </div>
       </main>
