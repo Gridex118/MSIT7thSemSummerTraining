@@ -23,6 +23,23 @@ export async function registerUser(req: Request, res: Response) {
   }
 }
 
+export async function loginUser(req: Request, res: Response) {
+  const { identifier, password } = req.body;
+  if (!identifier || !password) {
+    res.status(400).json({ error: "identifier and password are required" });
+    return;
+  }
+  try {
+    const result = await userService.loginUser({
+      identifier: String(identifier),
+      password: String(password),
+    });
+    res.json(result);
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
 export async function updateUser(req: Request, res: Response) {
   const { email, password } = req.body;
   if (!email && !password) {

@@ -36,14 +36,18 @@ export async function createGroup(input: CreateGroupInputType) {
   });
 }
 
-export async function updateGroupAvatar(id: string, filename: string) {
+export async function updateGroupAvatar(
+  id: string,
+  userId: string,
+  filename: string,
+) {
   assertValidId(id, "group id");
-  const group = await Group.findByIdAndUpdate(
-    id,
-    { avatar: `${AVATAR_PATH}/${filename}` },
-    { new: true },
-  );
+  const group = await Group.findById(id);
   if (!group) throw new ServiceError(404, "Group not found");
+  if (String(group.owner) !== userId)
+    throw new ServiceError(403, "Only the group owner can change the avatar");
+  group.avatar = `${AVATAR_PATH}/${filename}`;
+  await group.save();
   return group;
 }
 

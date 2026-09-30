@@ -1,7 +1,7 @@
 import { isValidObjectId } from "mongoose";
 import { Discussion } from "../models/discussion.model.ts";
 import { Chat } from "../models/chat.model.ts";
-import { User } from "../models/user.model.ts";
+import { Group } from "../models/group.model.ts";
 import { ServiceError } from "../errors.ts";
 
 export type ChatContentType = "text" | "image";
@@ -38,12 +38,17 @@ export async function getChats(id: string) {
 export async function createChat(id: string, input: CreateChatInputType) {
   assertValidId(id, "discussion id");
   assertValidId(input.sender, "sender id");
-  const [discussion, sender] = await Promise.all([
-    Discussion.exists({ _id: id }),
-    User.exists({ _id: input.sender }),
-  ]);
+  const discussion = await Discussion.findById(id).select("group");
   if (!discussion) throw new ServiceError(404, "Discussion not found");
-  if (!sender) throw new ServiceError(404, "Sender not found");
+  const isMember = await Group.exists({
+    _id: discussion.group,
+    members: input.sender,
+  });
+  if (!isMember)
+    throw new ServiceError(
+      403,
+      "Only group members can post in this discussion",
+    );
   const chat = await Chat.create({
     discussion: id,
     sender: input.sender,

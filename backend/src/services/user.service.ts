@@ -5,9 +5,13 @@ import { Book } from "../models/book.model.ts";
 import { UserBook } from "../models/user_book.model.ts";
 import { Group } from "../models/group.model.ts";
 import { ServiceError } from "../errors.ts";
+import { signToken } from "../middlewares/auth.middleware.ts";
 
 const SALT_ROUNDS = 10;
+const DUMMY_HASH = bcrypt.hashSync("dummy password", SALT_ROUNDS);
 const AVATAR_PATH = "/uploads/avatars";
+
+export type LoginInputType = { identifier: string; password: string };
 
 export type RegisterInputType = {
   name: string;
@@ -32,7 +36,21 @@ export async function registerUser(input: RegisterInputType) {
   const hashed = await bcrypt.hash(String(input.password), SALT_ROUNDS);
   const user = await User.create({ ...input, password: hashed });
   const { password: _password, ...safe } = user.toObject();
-  return safe;
+  return { user: safe, token: signToken(String(user._id)) };
+}
+
+export async function loginUser(input: LoginInputType) {
+  const identifier = input.identifier.trim().toLowerCase();
+  const user = await User.findOne({
+    $or: [{ email: identifier }, { username: identifier }],
+  }).select("+password");
+  const valid = await bcrypt.compare(
+    input.password,
+    user?.password ?? DUMMY_HASH,
+  );
+  if (!user || !valid) throw new ServiceError(401, "Invalid credentials");
+  const { password: _password, ...safe } = user.toObject();
+  return { user: safe, token: signToken(String(user._id)) };
 }
 
 export async function updateUser(
