@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+
 const bookSchema = new Schema(
   {
     title: { type: String, required: true, trim: true },
@@ -7,4 +8,5 @@ const bookSchema = new Schema(
   },
   { timestamps: true },
 );
+
 export const Book = model("Book", bookSchema);

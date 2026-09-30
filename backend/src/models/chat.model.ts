@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+
 const chatSchema = new Schema({
   discussion: {
     type: Schema.Types.ObjectId,
@@ -11,4 +12,5 @@ const chatSchema = new Schema({
   content: { type: String, required: true },
 });
 chatSchema.index({ discussion: 1, sentAt: 1 });
+
 export const Chat = model("Chat", chatSchema);

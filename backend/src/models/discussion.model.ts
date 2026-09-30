@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+
 const discussionSchema = new Schema(
   {
     title: { type: String, required: true, trim: true },
@@ -13,4 +14,5 @@ const discussionSchema = new Schema(
   },
   { timestamps: true },
 );
+
 export const Discussion = model("Discussion", discussionSchema);

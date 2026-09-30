@@ -1,7 +1,10 @@
 import { Schema, model } from "mongoose";
+
 const groupSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true },
+    avatar: { type: String, default: null },
     visibility: {
       type: String,
       enum: ["public", "private"],
@@ -12,4 +15,5 @@ const groupSchema = new Schema(
   },
   { timestamps: true },
 );
+
 export const Group = model("Group", groupSchema);
