@@ -3,7 +3,7 @@ import {
   searchBooks,
   getBookCover,
   getBookDescription,
-} from "../controllers/openLibraryController.ts";
+} from "../controllers/openLibrary.controller.ts";
 
 const router = express.Router();
 

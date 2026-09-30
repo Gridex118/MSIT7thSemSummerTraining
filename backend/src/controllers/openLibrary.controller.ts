@@ -4,7 +4,7 @@ import {
   fetchOpenLibrarySearch,
   getOpenLibraryBookCoverURL,
   type CoverSizeType,
-} from "../services/openLibrary.ts";
+} from "../services/openLibrary.service.ts";
 
 const WORK_KEY_PATTERN = /^OL\d+W$/;
 const EDITION_KEY_PATTERN = /^OL\d+M$/;
