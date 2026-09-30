@@ -19,7 +19,6 @@ const userSchema = new Schema(
     },
     avatar: { type: String, default: null },
     password: { type: String, required: true, select: false },
-    books: [{ type: Schema.Types.ObjectId, ref: "Book" }],
   },
   { timestamps: true },
 );

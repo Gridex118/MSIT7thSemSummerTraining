@@ -2,6 +2,7 @@ import { isValidObjectId, Types } from "mongoose";
 import bcrypt from "bcrypt";
 import { User } from "../models/user.model.ts";
 import { Book } from "../models/book.model.ts";
+import { UserBook } from "../models/user_book.model.ts";
 import { Group } from "../models/group.model.ts";
 import { ServiceError } from "../errors.ts";
 
@@ -17,6 +18,8 @@ export type RegisterInputType = {
 
 export type BookInputType = {
   title: string;
+  author: string;
+  authorKey: string;
   workKey: string;
   editionKey: string;
 };
@@ -51,22 +54,38 @@ export async function updateUser(
 
 export async function addBooks(id: string, books: BookInputType[]) {
   assertValidId(id, "user id");
-  const saved = await Promise.all(
-    books.map((b) =>
-      Book.findOneAndUpdate(
+  const userExists = await User.exists({ _id: id });
+  if (!userExists) throw new ServiceError(404, "User not found");
+  const userId = new Types.ObjectId(id);
+  await Promise.all(
+    books.map(async (b) => {
+      const book = await Book.findOneAndUpdate(
         { editionKey: b.editionKey },
-        { $setOnInsert: { title: b.title, workKey: b.workKey } },
+        {
+          $setOnInsert: {
+            title: b.title,
+            author: b.author,
+            authorKey: b.authorKey,
+            workKey: b.workKey,
+          },
+        },
         { upsert: true, new: true },
-      ),
-    ),
+      );
+      await UserBook.updateOne(
+        { user: userId, book: book._id },
+        { $setOnInsert: { user: userId, book: book._id } },
+        { upsert: true },
+      );
+    }),
   );
-  const user = await User.findByIdAndUpdate(
-    id,
-    { $addToSet: { books: { $each: saved.map((b) => b._id) } } },
-    { new: true },
-  ).populate("books");
-  if (!user) throw new ServiceError(404, "User not found");
-  return user;
+  return UserBook.find({ user: userId }).populate("book");
+}
+
+export async function getBooksInList(id: string) {
+  assertValidId(id, "user id");
+  const exists = await User.exists({ _id: id });
+  if (!exists) throw new ServiceError(404, "User not found");
+  return UserBook.find({ user: id }).populate("book", "title author");
 }
 
 export async function joinGroup(id: string, groupId: string) {

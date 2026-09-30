@@ -11,6 +11,6 @@ const chatSchema = new Schema({
   contentType: { type: String, enum: ["text", "image"], default: "text" },
   content: { type: String, required: true },
 });
-chatSchema.index({ discussion: 1, sentAt: 1 });
+chatSchema.index({ discussion: 1, sentAt: 1 }, { unique: true });
 
 export const Chat = model("Chat", chatSchema);
