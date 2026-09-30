@@ -1,5 +1,7 @@
 import "dotenv/config";
 
+import type { CoverSizeType, OpenLibraryBookType } from "../types.ts";
+
 const SEARCH_BASE_URL = "https://openlibrary.org/search.json";
 const WORK_BASE_URL = "https://openlibrary.org/works";
 const COVERS_BASE_URL = "http://covers.openlibrary.org/b";
@@ -8,28 +10,6 @@ const COVERS_OLID_URL = `${COVERS_BASE_URL}/olid`;
 const REQUEST_HEADERS = {
   "User-Agent": `BooksGroup/0.1 (${process.env.USER_EMAIL ?? "example@example.org"})`,
 };
-
-export type OpenLibraryAuthorIdentityType = {
-  name: string;
-  authorKey: string;
-};
-
-export type OpenLibraryBookType = {
-  // title
-  title: string;
-  // key
-  workKey: string;
-  // subject
-  subjects: string[];
-  // author_name, author_key
-  author: OpenLibraryAuthorIdentityType;
-  // number_of_pages_median
-  numPages: number;
-  // editions.docs[0].key, just grab the one edition it prints out by default
-  editionKey: string;
-};
-
-export type CoverSizeType = "S" | "M" | "L";
 
 type OpenLibrarySearchDocsType = {
   author_key: string;

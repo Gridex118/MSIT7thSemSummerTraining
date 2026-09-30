@@ -4,20 +4,12 @@ import { Group } from "../models/group.model.ts";
 import { User } from "../models/user.model.ts";
 import { Discussion } from "../models/discussion.model.ts";
 import { ServiceError } from "../errors.ts";
+import type {
+  CreateGroupInputType,
+  CreateDiscussionInputType,
+} from "../types.ts";
 
 const AVATAR_PATH = "/uploads/avatars";
-
-export type CreateGroupInputType = {
-  name: string;
-  description: string;
-  owner: string;
-};
-
-export type CreateDiscussionInputType = {
-  title: string;
-  startedBy: string;
-  book: { title: string; workKey: string; editionKey: string };
-};
 
 function assertValidId(id: string, label: string) {
   if (!isValidObjectId(id)) throw new ServiceError(400, `Invalid ${label}`);

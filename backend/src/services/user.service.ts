@@ -6,27 +6,15 @@ import { UserBook } from "../models/user_book.model.ts";
 import { Group } from "../models/group.model.ts";
 import { ServiceError } from "../errors.ts";
 import { signToken } from "../middlewares/auth.middleware.ts";
+import type {
+  RegisterInputType,
+  LoginInputType,
+  BookInputType,
+} from "../types.ts";
 
 const SALT_ROUNDS = 10;
 const DUMMY_HASH = bcrypt.hashSync("dummy password", SALT_ROUNDS);
 const AVATAR_PATH = "/uploads/avatars";
-
-export type LoginInputType = { identifier: string; password: string };
-
-export type RegisterInputType = {
-  name: string;
-  username: string;
-  email: string;
-  password: string;
-};
-
-export type BookInputType = {
-  title: string;
-  author: string;
-  authorKey: string;
-  workKey: string;
-  editionKey: string;
-};
 
 function assertValidId(id: string, label: string) {
   if (!isValidObjectId(id)) throw new ServiceError(400, `Invalid ${label}`);

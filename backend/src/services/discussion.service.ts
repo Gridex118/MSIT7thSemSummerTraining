@@ -3,14 +3,7 @@ import { Discussion } from "../models/discussion.model.ts";
 import { Chat } from "../models/chat.model.ts";
 import { Group } from "../models/group.model.ts";
 import { ServiceError } from "../errors.ts";
-
-export type ChatContentType = "text" | "image";
-
-export type CreateChatInputType = {
-  sender: string;
-  contentType: ChatContentType;
-  content: string;
-};
+import type { ChatContentType, CreateChatInputType } from "../types.ts";
 
 function assertValidId(id: string, label: string) {
   if (!isValidObjectId(id)) throw new ServiceError(400, `Invalid ${label}`);

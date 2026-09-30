@@ -9,7 +9,7 @@ import type {
   SimilarBookType,
   ReviewType,
 } from "./types";
-import type { OpenLibraryBookType } from "../../../../backend/src/services/openLibrary";
+import type { OpenLibraryBookType } from "@backend/types";
 
 const COVER_URL = "/v1/openLibrary/covers";
 const DESCR_URL = "/v1/openLibrary/description";
