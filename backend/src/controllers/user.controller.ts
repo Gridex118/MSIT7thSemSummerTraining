@@ -55,7 +55,16 @@ export async function addBooks(req: Request, res: Response) {
   }
   try {
     const user = await userService.addBooks(String(req.params.id), books);
-    res.json(user);
+    res.status(200).json(user);
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+export async function getBooksInList(req: Request, res: Response) {
+  try {
+    const books = await userService.getBooksInList(String(req.params.id));
+    res.status(200).json(books);
   } catch (err) {
     handleError(res, err);
   }
@@ -99,7 +108,7 @@ export async function getUserProfile(req: Request, res: Response) {
 export async function getAllUsers(_req: Request, res: Response) {
   try {
     const users = await userService.getAllUsers();
-    res.json(users);
+    res.status(200).json(users);
   } catch (err) {
     handleError(res, err);
   }

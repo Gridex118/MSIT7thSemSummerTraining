@@ -12,6 +12,7 @@
   "type": "module",
   "main": "app.js",
   "scripts": {
+    "serve": "node src/app.ts",
     "test": "jest"
   },
   "dependencies": {
