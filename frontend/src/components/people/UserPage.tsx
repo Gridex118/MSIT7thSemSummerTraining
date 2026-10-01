@@ -1,41 +1,36 @@
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
 import BookDescription from "../books/BookDescription";
+import useAuth from "../useAuth";
+import type { ProfileResponseType } from "@backend/types";
 import type { BookType } from "../books/types";
 import type { UserType, GroupType } from "./types";
-import { Link, useNavigate, useParams } from "react-router";
-import useAuth from "../useAuth";
 
-const placeholderUser: UserType = {
-  username: "reader42",
-  groups: [
-    { slug: "fantasy-fans", name: "Fantasy Fans", members: 1280 },
-    { slug: "classics-club", name: "Classics Club", members: 342 },
-    { slug: "night-owl-readers", name: "Night Owl Readers", members: 87 },
-  ],
-  books: [
-    {
-      title: "The Hobbit",
-      author: "J.R.R. Tolkien",
-      description:
-        "Bilbo Baggins is swept into an unexpected journey to reclaim a lost dwarf kingdom from the dragon Smaug.",
-      genres: ["Fantasy", "Adventure", "Classic"],
-      pages: 310,
-      firstPublished: "1937",
-      stats: { reading: 1204, read: 58320, wantToRead: 20418 },
-    },
-    {
-      title: "The Name of the Wind",
-      author: "Patrick Rothfuss",
-      description:
-        "The story of Kvothe, a gifted young man who grows into the most notorious wizard his world has ever seen.",
-      genres: ["Fantasy", "Adventure"],
-      pages: 662,
-      firstPublished: "2007",
-      stats: { reading: 980, read: 41200, wantToRead: 27650 },
-    },
-  ],
-};
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
+
+const PROFILE_URL = "/v1/users";
+const dummyStats = { reading: 1204, read: 58320, wantToRead: 20418 };
+function toUserType(profile: ProfileResponseType): UserType {
+  return {
+    username: profile.username,
+    groups: profile.groups.map((g) => ({
+      slug: g._id,
+      name: g.name,
+      members: g.memberCount,
+    })),
+    books: profile.books.map(({ book }) => ({
+      title: book.title,
+      author: book.author ?? "",
+      description: "",
+      genres: [],
+      pages: 0,
+      firstPublished: "",
+      stats: dummyStats,
+      workKey: book.workKey,
+    })),
+  };
+}
 
 function UserAvatar() {
   return (
@@ -83,12 +78,16 @@ function UserSidePanel({ user }: { user: UserType }) {
           </h1>
         </div>
       </div>
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-bold md:text-xl">Groups</h2>
-        {user.groups.map((group) => (
-          <GroupCard key={group.slug} group={group} />
-        ))}
-      </div>
+      {user.groups.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          <h2 className="text-lg font-bold md:text-xl">Groups</h2>
+          {user.groups.map((group) => (
+            <GroupCard key={group.slug} group={group} />
+          ))}
+        </div>
+      ) : (
+        <p>User has not joined any groups</p>
+      )}
     </aside>
   );
 }
@@ -105,6 +104,7 @@ function UserBookCard({ book }: { book: BookType }) {
 }
 
 function UserBookList({ books }: { books: BookType[] }) {
+  if (books.length <= 0) return <p>User has yet to add any books</p>;
   return (
     <section className="flex flex-col gap-4">
       {books.map((book) => (
@@ -115,7 +115,10 @@ function UserBookList({ books }: { books: BookType[] }) {
 }
 
 export default function UserPage() {
+  const { userId: paramsUserId } = useParams();
   const { userId } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<UserType | null>(null);
   const navbarLinks: NavbarLinkType[] = [
     userId ? null : { label: "Home", href: "/" },
     userId
@@ -125,16 +128,52 @@ export default function UserPage() {
     { label: "Groups", href: "/groups" },
   ];
 
+  useEffect(() => {
+    if (!paramsUserId) return;
+    let cancelled = false;
+    async function loadUser() {
+      try {
+        const res = await fetch(`${PROFILE_URL}/${paramsUserId}`);
+        if (res.status !== 200)
+          throw new Error(`Profile failed with status ${res.status}`);
+        const profile: ProfileResponseType = await res.json();
+        if (!cancelled) setUser(toUserType(profile));
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadUser();
+    return () => {
+      cancelled = true;
+    };
+  }, [paramsUserId]);
+
   return (
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
       <Navbar
         links={navbarLinks}
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"
       />
-      <main className="container mx-auto my-24 grid grid-cols-1 gap-4 p-4 text-white sm:gap-2 sm:p-0 md:relative md:grid-cols-[1fr_2fr] lg:gap-4">
-        <UserSidePanel user={placeholderUser} />
-        <UserBookList books={placeholderUser.books} />
-      </main>
+      {isLoading ? (
+        <div className="m-auto flex items-center gap-4 text-white">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+          Loading Results
+        </div>
+      ) : (
+        <main className="container mx-auto my-24 grid grid-cols-1 gap-4 p-4 text-white sm:gap-2 sm:p-0 md:relative md:grid-cols-[1fr_2fr] lg:gap-4">
+          {user ? (
+            <>
+              <UserSidePanel user={user} />
+              <UserBookList books={user.books} />
+            </>
+          ) : (
+            <p className="text-sm font-bold">User not found</p>
+          )}
+        </main>
+      )}
       <Footer />
     </div>
   );

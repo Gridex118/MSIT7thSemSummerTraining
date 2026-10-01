@@ -59,3 +59,19 @@ export type CreateChatInputType = {
   contentType: ChatContentType;
   content: string;
 };
+
+export type ProfileResponseType = {
+  _id: string;
+  name: string;
+  username: string;
+  groups: { _id: string; name: string; memberCount: number }[];
+  books: {
+    _id: string;
+    book: {
+      title: string;
+      author?: string;
+      workKey: string;
+      editionKey: string;
+    };
+  }[];
+};

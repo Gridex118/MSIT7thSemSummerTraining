@@ -125,7 +125,13 @@ export async function getUserProfile(id: string) {
   assertValidId(id, "user id");
   const user = await User.findById(id);
   if (!user) throw new ServiceError(404, "User not found");
-  const groups = await Group.find({ members: user._id }).select("name");
+  const groupDocs = await Group.find({ members: user._id })
+    .select("name members")
+    .lean();
+  const groups = groupDocs.map(({ members, ...rest }) => ({
+    ...rest,
+    memberCount: members.length,
+  }));
   const books = await UserBook.find({ user: user._id }).populate("book");
   return { ...user.toObject(), groups, books };
 }

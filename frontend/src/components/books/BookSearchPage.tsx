@@ -115,7 +115,6 @@ export default function BookSearchPage() {
           throw new Error(`Search failed with status ${res.status}`);
         const books: OpenLibraryBookType[] = await res.json();
         if (cancelled) {
-          setLoadingResults(false);
           return;
         }
         setResults(
@@ -128,11 +127,11 @@ export default function BookSearchPage() {
             raw: book,
           })),
         );
-        setLoadingResults(false);
       } catch (err) {
         console.error(err);
-        setLoadingResults(false);
         if (!cancelled) setResults([]);
+      } finally {
+        setLoadingResults(false);
       }
     }
     runSearch();
