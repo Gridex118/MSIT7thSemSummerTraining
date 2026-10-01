@@ -71,7 +71,12 @@ export async function addBooks(req: Request, res: Response) {
     return;
   }
   try {
-    const user = await userService.addBooks(String(req.params.id), books);
+    const user = await userService.addBooks(
+      String(req.params.id),
+      books,
+      req.body.readStatus,
+      Number(req.body.rating) || undefined,
+    );
     res.status(200).json(user);
   } catch (err) {
     handleError(res, err);

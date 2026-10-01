@@ -58,10 +58,18 @@ export async function updateUser(
   return user;
 }
 
-export async function addBooks(id: string, books: BookInputType[]) {
+export async function addBooks(
+  id: string,
+  books: BookInputType[],
+  readStatus?: string,
+  rating?: number,
+) {
   assertValidId(id, "user id");
   const userExists = await User.exists({ _id: id });
   if (!userExists) throw new ServiceError(404, "User not found");
+  const set: { readStatus?: string; rating?: number } = {};
+  if (readStatus) set.readStatus = readStatus;
+  if (rating !== undefined) set.rating = rating;
   const userId = new Types.ObjectId(id);
   await Promise.all(
     books.map(async (b) => {
@@ -70,8 +78,8 @@ export async function addBooks(id: string, books: BookInputType[]) {
         {
           $setOnInsert: {
             title: b.title,
-            author: b.author,
-            authorKey: b.authorKey,
+            author: String(b.author),
+            authorKey: String(b.authorKey),
             workKey: b.workKey,
           },
         },
@@ -79,7 +87,7 @@ export async function addBooks(id: string, books: BookInputType[]) {
       );
       await UserBook.updateOne(
         { user: userId, book: book._id },
-        { $setOnInsert: { user: userId, book: book._id } },
+        { $set: set, $setOnInsert: { user: userId, book: book._id } },
         { upsert: true },
       );
     }),

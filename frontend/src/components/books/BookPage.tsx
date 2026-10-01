@@ -145,6 +145,11 @@ const statusLabels: Record<ReadingStatusType, string> = {
   read: "Read",
   wantToRead: "Want to Read",
 };
+const READ_STATUS_MAP: Record<ReadingStatusType, string> = {
+  reading: "reading",
+  read: "read",
+  wantToRead: "planning",
+};
 
 function CoverImage() {
   const { editionKey } = useParams();
@@ -216,18 +221,63 @@ function StarRating({ rating, onChange }: StarRatingProps) {
   );
 }
 
-type BookSidePanelProps = { isLoggedIn: boolean };
-function BookSidePanel({ isLoggedIn }: BookSidePanelProps) {
+type BookSidePanelProps = { isLoggedIn: boolean; raw?: OpenLibraryBookType };
+function BookSidePanel({ isLoggedIn, raw }: BookSidePanelProps) {
+  const { userId, authFetch } = useAuth();
   const [status, setStatus] = useState<ReadingStatusType | null>(null);
   const [rating, setRating] = useState(0);
+
+  async function saveBook(
+    newStatus: ReadingStatusType | null,
+    newRating: number,
+  ) {
+    if (!userId || !raw) return;
+    try {
+      const res = await authFetch(`/v1/users/${userId}/books`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          books: [
+            {
+              title: raw.title,
+              author: raw.author.name,
+              authorKey: raw.author.authorKey,
+              workKey: raw.workKey,
+              editionKey: raw.editionKey,
+            },
+          ],
+          readStatus: newStatus ? READ_STATUS_MAP[newStatus] : undefined,
+          rating: newRating,
+        }),
+      });
+      if (res.status !== 200)
+        throw new Error(`Add book failed with status ${res.status}`);
+    } catch (err) {
+      console.error(err);
+      setStatus(status);
+      setRating(rating);
+    }
+  }
+
+  function handleStatusChange(newStatus: ReadingStatusType | null) {
+    setStatus(newStatus);
+    if (newStatus) saveBook(newStatus, rating);
+  }
+
+  function handleRatingChange(newRating: number) {
+    setRating(newRating);
+    if (newRating) saveBook(status, newRating);
+  }
 
   return (
     <aside className="flex flex-col gap-4 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 md:self-start dark:bg-black dark:shadow-black/60">
       <CoverImage />
       {isLoggedIn && (
-        <ReadingStatusToggle status={status} onChange={setStatus} />
+        <>
+          <ReadingStatusToggle status={status} onChange={handleStatusChange} />
+          <StarRating rating={rating} onChange={handleRatingChange} />
+        </>
       )}
-      {isLoggedIn && <StarRating rating={rating} onChange={setRating} />}
     </aside>
   );
 }
@@ -288,7 +338,7 @@ export default function BookPage() {
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
       <Navbar links={navbarLinks} />
       <main className="container mx-auto mt-16 mb-24 grid grid-cols-1 gap-4 p-4 sm:mt-4 sm:gap-2 sm:p-0 md:grid-cols-[1fr_2fr] lg:gap-4">
-        <BookSidePanel isLoggedIn={isLoggedIn} />
+        <BookSidePanel isLoggedIn={isLoggedIn} raw={raw} />
         <div className="flex flex-col gap-6 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 md:self-start dark:bg-black dark:shadow-black/60">
           {book ? (
             <BookDetailsSection book={book} />

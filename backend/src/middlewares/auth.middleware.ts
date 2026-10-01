@@ -20,12 +20,13 @@ export function signToken(userId: string) {
 /** The header is expected to contain `JWT <token>` for authorization */
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
-  if (!header?.startsWith("JWT ")) {
+  const HEADER_START = "JWT ";
+  if (!header?.startsWith(HEADER_START)) {
     res.status(401).json({ error: "Authentication required" });
     return;
   }
   try {
-    const payload = jwt.verify(header.slice(7), SECRET!, {
+    const payload = jwt.verify(header.slice(HEADER_START.length), SECRET!, {
       algorithms: [ALGORITHM],
     }) as JwtPayload;
     if (typeof payload.sub !== "string") throw new Error("Malformed token");
