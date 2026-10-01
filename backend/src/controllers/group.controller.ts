@@ -65,15 +65,23 @@ export async function getGroupDiscussions(req: Request, res: Response) {
     handleError(res, err);
   }
 }
+
+export async function getGroupDetails(req: Request, res: Response) {
+  try {
+    const group = await groupService.getGroupDetails(String(req.params.id));
+    res.json(group);
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
 export async function createDiscussion(req: Request, res: Response) {
   const { title, book } = req.body;
   const validBook = book?.title && book?.workKey && book?.editionKey;
   if (!title || !String(title).trim() || !validBook) {
-    res
-      .status(400)
-      .json({
-        error: "title and book { title, workKey, editionKey } are required",
-      });
+    res.status(400).json({
+      error: "title and book { title, workKey, editionKey } are required",
+    });
     return;
   }
   try {

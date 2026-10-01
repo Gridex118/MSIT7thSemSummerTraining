@@ -104,3 +104,14 @@ export type GroupType = {
   memberCount: number;
   avatar?: string | null;
 };
+
+export type GroupDetailsType = {
+  _id: string;
+  name: string;
+  description: string;
+  avatar?: string | null;
+  memberCount: number;
+  ownerId: string;
+  members: { _id: string }[];
+  discussions: { _id: string; title: string; book: { title: string } }[];
+};

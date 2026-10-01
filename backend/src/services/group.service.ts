@@ -8,6 +8,7 @@ import type {
   CreateGroupInputType,
   CreateDiscussionInputType,
   GroupType,
+  GroupDetailsType,
 } from "../types.ts";
 
 const AVATAR_PATH = "/uploads/avatars";
@@ -76,6 +77,31 @@ export async function getGroupDiscussions(id: string) {
     .sort({ createdAt: -1 })
     .populate("book", "title workKey editionKey")
     .populate("startedBy", "name username avatar");
+}
+
+export async function getGroupDetails(id: string): Promise<GroupDetailsType> {
+  assertValidId(id, "group id");
+  const group = await Group.findById(id).lean();
+  if (!group) throw new ServiceError(404, "Group not found");
+  const discussions = await Discussion.find({ group: group._id })
+    .sort({ createdAt: -1 })
+    .select("title book")
+    .populate<{ book: { title: string } }>("book", "title")
+    .lean();
+  return {
+    _id: String(group._id),
+    name: group.name,
+    description: group.description,
+    avatar: group.avatar,
+    memberCount: group.members.length,
+    ownerId: String(group.owner),
+    members: group.members.map((member) => ({ _id: String(member) })),
+    discussions: discussions.map((d) => ({
+      _id: String(d._id),
+      title: d.title,
+      book: { title: d.book.title },
+    })),
+  };
 }
 
 export async function createDiscussion(
