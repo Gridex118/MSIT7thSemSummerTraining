@@ -13,6 +13,7 @@ import type {
 import type {
   OpenLibraryEditionType,
   OpenLibraryWorkType,
+  ProfileResponseType,
 } from "@backend/types";
 
 const COVER_URL = "/v1/openLibrary/covers";
@@ -123,6 +124,11 @@ const READ_STATUS_MAP: Record<ReadingStatusType, string> = {
   read: "read",
   wantToRead: "planning",
 };
+const STATUS_FROM_BACKEND: Record<string, ReadingStatusType> = {
+  reading: "reading",
+  read: "read",
+  planning: "wantToRead",
+};
 
 function CoverImage() {
   const { editionKey } = useParams();
@@ -173,8 +179,39 @@ type BookSidePanelProps = { isLoggedIn: boolean; book: BookType | null };
 function BookSidePanel({ isLoggedIn, book }: BookSidePanelProps) {
   const { userId, authFetch } = useAuth();
   const [status, setStatus] = useState<ReadingStatusType | null>(null);
-
-  async function saveBook(newStatus: ReadingStatusType | null) {
+  const editionKey = book?.editionKey;
+  useEffect(() => {
+    if (!userId || !editionKey) {
+      return;
+    }
+    let cancelled = false;
+    async function loadStatus() {
+      try {
+        const res = await fetch(`/v1/users/${userId}`, { cache: "no-store" });
+        if (res.status !== 200)
+          throw new Error(`Profile failed with status ${res.status}`);
+        const profile: ProfileResponseType = await res.json();
+        const entry = profile.books.find(
+          (b) => b.book.editionKey === editionKey,
+        );
+        if (!cancelled)
+          setStatus(
+            entry ? (STATUS_FROM_BACKEND[entry.readStatus] ?? null) : null,
+          );
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setStatus(null);
+      }
+    }
+    loadStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, editionKey]);
+  async function saveBook(
+    newStatus: ReadingStatusType,
+    previous: ReadingStatusType | null,
+  ) {
     if (!userId || !book) return;
     try {
       const res = await authFetch(`/v1/users/${userId}/books`, {
@@ -190,29 +227,27 @@ function BookSidePanel({ isLoggedIn, book }: BookSidePanelProps) {
               editionKey: book.editionKey,
             },
           ],
-          readStatus: newStatus ? READ_STATUS_MAP[newStatus] : undefined,
+          readStatus: READ_STATUS_MAP[newStatus],
         }),
       });
       if (res.status !== 200)
         throw new Error(`Add book failed with status ${res.status}`);
     } catch (err) {
       console.error(err);
-      setStatus(status);
+      setStatus(previous);
     }
   }
-
   function handleStatusChange(newStatus: ReadingStatusType | null) {
+    const previous = status;
     setStatus(newStatus);
-    if (newStatus) saveBook(newStatus);
+    if (newStatus) saveBook(newStatus, previous);
   }
 
   return (
     <aside className="flex flex-col gap-4 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 md:self-start dark:bg-black dark:shadow-black/60">
       <CoverImage />
       {isLoggedIn && (
-        <>
-          <ReadingStatusToggle status={status} onChange={handleStatusChange} />
-        </>
+        <ReadingStatusToggle status={status} onChange={handleStatusChange} />
       )}
     </aside>
   );
