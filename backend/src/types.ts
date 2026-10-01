@@ -115,3 +115,10 @@ export type GroupDetailsType = {
   members: { _id: string }[];
   discussions: { _id: string; title: string; book: { title: string } }[];
 };
+
+export type SimpleBookType = {
+  _id: string;
+  title: string;
+  workKey: string;
+  editionKey: string;
+};

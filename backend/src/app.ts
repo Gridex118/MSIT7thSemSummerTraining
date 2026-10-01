@@ -10,6 +10,7 @@ import openLibraryRouter from "./routes/openLibrary.routes.ts";
 import userRouter from "./routes/user.routes.ts";
 import groupRouter from "./routes/group.routes.ts";
 import discussionRouter from "./routes/discussion.routes.ts";
+import bookRouter from "./routes/book.routes.ts";
 
 const mongoDBURI = process.env.MONGODB_URI;
 const PORT = process.env.PORT;
@@ -42,6 +43,7 @@ app.use("/v1/openLibrary", openLibraryRouter);
 app.use("/v1/users", userRouter);
 app.use("/v1/groups", groupRouter);
 app.use("/v1/discussions", discussionRouter);
+app.use("/v1/books", bookRouter);
 
 async function serve() {
   if (!mongoDBURI) {
