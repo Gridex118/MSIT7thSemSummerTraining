@@ -27,7 +27,6 @@ export type ReviewType = {
 };
 
 export type BookCommunityType = {
-  similarBooks: SimilarBookType[];
   reviews: ReviewType[];
 };
 

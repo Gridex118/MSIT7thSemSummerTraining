@@ -7,7 +7,6 @@ import useAuth from "../useAuth";
 import type {
   BookType,
   BookCommunityType,
-  SimilarBookType,
   ReviewType,
   ReadingStatusType,
 } from "./types";
@@ -21,18 +20,6 @@ const WORK_URL = "/v1/openLibrary/work";
 const EDITION_URL = "/v1/openLibrary/edition";
 
 const placeholderCommunity: BookCommunityType = {
-  similarBooks: [
-    {
-      slug: "the-fellowship-of-the-ring",
-      title: "The Fellowship of the Ring",
-      author: "J.R.R. Tolkien",
-    },
-    {
-      slug: "the-name-of-the-wind",
-      title: "The Name of the Wind",
-      author: "Patrick Rothfuss",
-    },
-  ],
   reviews: [
     {
       id: 1,
@@ -87,18 +74,6 @@ function BookDetailsSection({ book }: { book: BookType }) {
   );
 }
 
-function SimilarBookCard({ book }: { book: SimilarBookType }) {
-  return (
-    <Link
-      className="rounded-xl border border-blue-300 p-2 px-4 transition dark:border-gray-700 [&:active,&:hover]:-translate-y-1"
-      to={`/book/${book.slug}`}
-    >
-      <p className="text-sm font-bold">{book.title}</p>
-      <p className="text-xs font-semibold dark:text-gray-400">{book.author}</p>
-    </Link>
-  );
-}
-
 function ReviewCard({ review }: { review: ReviewType }) {
   return (
     <div className="flex flex-col gap-1 rounded-xl border border-blue-300 p-2 px-4 dark:border-gray-700">
@@ -116,12 +91,6 @@ function BookCommunitySection({ community }: { community: BookCommunityType }) {
 
   return (
     <section className="flex flex-col gap-6 border-t border-blue-300 pt-6 dark:border-gray-700">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-bold md:text-xl">Similar Books</h2>
-        {community.similarBooks.map((book) => (
-          <SimilarBookCard key={book.slug} book={book} />
-        ))}
-      </div>
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-bold md:text-xl">Reviews</h2>
         {community.reviews.map((review) => (
@@ -200,41 +169,12 @@ function ReadingStatusToggle({ status, onChange }: ReadingStatusToggleProps) {
   );
 }
 
-type StarRatingProps = { rating: number; onChange: (rating: number) => void };
-function StarRating({ rating, onChange }: StarRatingProps) {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <p className="text-sm font-bold dark:text-gray-400">Your Rating</p>
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            className={`text-2xl transition [&:active,&:hover]:-translate-y-1 ${
-              star <= rating
-                ? "text-yellow-300"
-                : "text-blue-300 dark:text-gray-700"
-            }`}
-            onClick={() => onChange(star === rating ? 0 : star)}
-          >
-            ★
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 type BookSidePanelProps = { isLoggedIn: boolean; book: BookType | null };
 function BookSidePanel({ isLoggedIn, book }: BookSidePanelProps) {
   const { userId, authFetch } = useAuth();
   const [status, setStatus] = useState<ReadingStatusType | null>(null);
-  const [rating, setRating] = useState(0);
 
-  async function saveBook(
-    newStatus: ReadingStatusType | null,
-    newRating: number,
-  ) {
+  async function saveBook(newStatus: ReadingStatusType | null) {
     if (!userId || !book) return;
     try {
       const res = await authFetch(`/v1/users/${userId}/books`, {
@@ -251,7 +191,6 @@ function BookSidePanel({ isLoggedIn, book }: BookSidePanelProps) {
             },
           ],
           readStatus: newStatus ? READ_STATUS_MAP[newStatus] : undefined,
-          rating: newRating,
         }),
       });
       if (res.status !== 200)
@@ -259,18 +198,12 @@ function BookSidePanel({ isLoggedIn, book }: BookSidePanelProps) {
     } catch (err) {
       console.error(err);
       setStatus(status);
-      setRating(rating);
     }
   }
 
   function handleStatusChange(newStatus: ReadingStatusType | null) {
     setStatus(newStatus);
-    if (newStatus) saveBook(newStatus, rating);
-  }
-
-  function handleRatingChange(newRating: number) {
-    setRating(newRating);
-    if (newRating) saveBook(status, newRating);
+    if (newStatus) saveBook(newStatus);
   }
 
   return (
@@ -279,7 +212,6 @@ function BookSidePanel({ isLoggedIn, book }: BookSidePanelProps) {
       {isLoggedIn && (
         <>
           <ReadingStatusToggle status={status} onChange={handleStatusChange} />
-          <StarRating rating={rating} onChange={handleRatingChange} />
         </>
       )}
     </aside>
