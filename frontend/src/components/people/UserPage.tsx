@@ -68,13 +68,13 @@ function UserSidePanel({ user }: { user: UserType }) {
             {user.username}
             {userId === paramsUserId && (
               <button
-                className="ml-2 w-fit cursor-pointer text-base text-red-100 underline dark:text-red-400"
+                className="ml-2 w-fit cursor-pointer text-base text-red-100 hover:underline dark:text-red-400"
                 onClick={() => {
                   logout();
                   navigate("/");
                 }}
               >
-                /Log Out
+                / Log Out
               </button>
             )}
           </h1>

@@ -9,16 +9,9 @@ export type UserType = {
 };
 
 export type DiscussionType = {
-  id: number;
+  id: string;
   title: string;
   bookTitle: string;
-};
-
-export type GroupDetailType = {
-  name: string;
-  description: string;
-  members: number;
-  discussions: DiscussionType[];
 };
 
 export type CommentType = {
