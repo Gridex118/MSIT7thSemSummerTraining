@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import * as discussionService from "../services/discussion.service.ts";
 import { ServiceError, handleError } from "../errors.ts";
+import type { ChatContentType } from "../types.ts";
 
 const CONTENT_TYPES = ["text", "image"];
 
@@ -38,7 +39,7 @@ export async function createChat(req: Request, res: Response) {
   try {
     const chat = await discussionService.createChat(String(req.params.id), {
       sender: req.userId!,
-      contentType: contentType as discussionService.ChatContentType,
+      contentType: contentType as ChatContentType,
       content: String(content).trim(),
     });
     res.status(201).json(chat);

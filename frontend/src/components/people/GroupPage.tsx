@@ -6,6 +6,7 @@ import { DiscussionModal } from "./DiscussionModal";
 import type { GroupDetailsType } from "@backend/types";
 import Footer from "../common/Footer";
 import { Link, useParams } from "react-router";
+import { CreateDiscussionModal } from "./CreateDiscussionModal";
 
 const GROUP_URL = "/v1/groups";
 
@@ -143,6 +144,8 @@ export default function GroupPage() {
   ];
   const [group, setGroup] = useState<GroupDetailsType | null>(null);
   const [selected, setSelected] = useState<DiscussionType | null>(null);
+  const [showDiscussionCreateModel, setShowDiscussionCreateModal] =
+    useState(false);
   const isMemberOfGroup =
     userId === group?.ownerId ||
     group?.members.find(({ _id }) => _id === userId);
@@ -168,7 +171,7 @@ export default function GroupPage() {
     return () => {
       cancelled = true;
     };
-  }, [groupId]);
+  }, [groupId, showDiscussionCreateModel]);
 
   return (
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
@@ -189,6 +192,7 @@ export default function GroupPage() {
                 <button
                   type="button"
                   className="w-fit rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white shadow-md transition md:text-base dark:bg-black [&:active,&:hover]:-translate-y-1"
+                  onClick={() => setShowDiscussionCreateModal(true)}
                 >
                   Start New Discussion
                 </button>
@@ -199,6 +203,12 @@ export default function GroupPage() {
                   </Link>{" "}
                   to start a new discussion
                 </p>
+              )}
+              {showDiscussionCreateModel && (
+                <CreateDiscussionModal
+                  groupId={groupId!}
+                  onClose={() => setShowDiscussionCreateModal(false)}
+                />
               )}
             </div>
           </>
