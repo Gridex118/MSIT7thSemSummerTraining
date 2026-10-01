@@ -1,4 +1,5 @@
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, Navigate } from "react-router";
+import useAuth from "./useAuth";
 import Navbar, { type NavbarLinkType } from "./common/Navbar";
 import Footer from "./common/Footer";
 import React, {
@@ -55,7 +56,9 @@ function LoginForm() {
   const [errorMessage, setErrorMessage] = useState("");
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { login, userId } = useAuth();
   const navigate = useNavigate();
+
   const handleSubmit: SubmitEventHandler = async (e) => {
     e.preventDefault();
     try {
@@ -63,8 +66,8 @@ function LoginForm() {
         identifier: usernameOrEmail,
         password,
       });
-      localStorage.setItem("token", token);
-      navigate(`/user/${userId}`);
+      login(token);
+      navigate(`/user/${userId}`, { replace: true });
     } catch (err) {
       if (err instanceof Error) {
         setErrorMessage(err.message);
@@ -73,6 +76,8 @@ function LoginForm() {
       }
     }
   };
+
+  if (userId) return <Navigate to={`/user/${userId}`} replace />;
 
   return (
     <form

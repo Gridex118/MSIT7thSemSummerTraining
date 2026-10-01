@@ -1,6 +1,7 @@
-import { Link, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 import Navbar, { type NavbarLinkType } from "./common/Navbar";
 import Footer from "./common/Footer";
+import useAuth from "./useAuth";
 import { useState, type SubmitEventHandler } from "react";
 import type { RegisterInputType } from "@backend/types";
 
@@ -55,8 +56,9 @@ function RegistrationForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
-
+  const { login, userId } = useAuth();
   const navigate = useNavigate();
+
   const handleSubmit: SubmitEventHandler = async (e) => {
     e.preventDefault();
     try {
@@ -66,7 +68,7 @@ function RegistrationForm() {
         email,
         password,
       });
-      localStorage.setItem("token", token);
+      login(token);
       navigate(`/user/${userId}`, { replace: true });
     } catch (err) {
       if (err instanceof Error) {
@@ -76,6 +78,8 @@ function RegistrationForm() {
       }
     }
   };
+
+  if (userId) return <Navigate to={`/user/${userId}`} replace />;
 
   return (
     <form
