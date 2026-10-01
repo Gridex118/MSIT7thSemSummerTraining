@@ -219,8 +219,7 @@ export default function GroupPage() {
       <Footer />
       {selected && (
         <DiscussionModal
-          discussion={selected}
-          comments={placeholderComments}
+          discussionId={selected.id}
           onClose={() => setSelected(null)}
           onSend={(message) => console.log(message)}
         />

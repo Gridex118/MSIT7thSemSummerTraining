@@ -15,7 +15,7 @@ export type DiscussionType = {
 };
 
 export type CommentType = {
-  id: number;
+  id: string;
   user: string;
   date: string;
   message: string;

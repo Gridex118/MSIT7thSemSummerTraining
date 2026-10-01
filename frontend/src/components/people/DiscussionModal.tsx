@@ -1,5 +1,15 @@
-import type { CommentType, DiscussionType } from "./types";
+import type { CommentType } from "./types";
 import { useEffect, useState } from "react";
+import type { ChatType } from "@backend/types";
+
+function toCommentType(chat: ChatType): CommentType {
+  return {
+    id: chat._id,
+    user: chat.sender.username,
+    message: chat.content,
+    date: chat.sentAt,
+  };
+}
 
 function CommentAvatar() {
   return (
@@ -23,8 +33,7 @@ function CommentCard({ comment }: { comment: CommentType }) {
 }
 
 type DiscussionModalProps = {
-  discussion: DiscussionType;
-  comments: CommentType[];
+  discussionId: string;
   onClose: () => void;
   onSend: (message: string) => void;
 };
@@ -62,11 +71,14 @@ function CommentInput({ onSend }: { onSend: (message: string) => void }) {
 }
 
 export function DiscussionModal({
-  discussion,
-  comments,
+  discussionId,
   onClose,
   onSend,
 }: DiscussionModalProps) {
+  const [chats, setChats] = useState<ChatType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -74,6 +86,30 @@ export function DiscussionModal({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadChats = async () => {
+      try {
+        const res = await fetch(`/v1/discussions/${discussionId}/chats`);
+        if (!res.ok)
+          throw new Error(`Fetch chats failed with status ${res.status}`);
+        const data: ChatType[] = await res.json();
+        if (!cancelled) setChats(data);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setError("Could not load the chat. Please try again.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadChats();
+    return () => {
+      cancelled = true;
+    };
+  }, [discussionId]);
 
   return (
     <div
@@ -87,24 +123,34 @@ export function DiscussionModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-lg font-bold md:text-xl">{discussion.title}</h2>
-            <p className="text-sm font-semibold dark:text-gray-400">
-              on {discussion.bookTitle}
-            </p>
-          </div>
+          <h2 className="text-lg font-bold md:text-xl">Discussion</h2>
           <button
             type="button"
             aria-label="Close"
-            className="aspect-square rounded-full border border-blue-300 px-3 py-1 text-xl font-bold dark:border-gray-700 [&:active,&:hover]:border-transparent [&:active,&:hover]:bg-red-500"
+            className="grid place-items-center rounded-full border border-blue-300 px-3 py-1 text-xl font-bold dark:border-gray-700 [&:active,&:hover]:border-transparent [&:active,&:hover]:bg-red-500"
             onClick={onClose}
           >
             ✕
           </button>
         </div>
         <section className="flex flex-col gap-4 overflow-y-auto">
-          {comments.map((comment) => (
-            <CommentCard key={comment.id} comment={comment} />
+          {loading && (
+            <p className="text-center text-sm font-semibold dark:text-gray-400">
+              Loading...
+            </p>
+          )}
+          {error && (
+            <p className="text-center text-sm font-bold text-red-300">
+              {error}
+            </p>
+          )}
+          {!loading && !error && chats.length === 0 && (
+            <p className="text-center text-sm font-semibold dark:text-gray-400">
+              No messages yet. Start the conversation.
+            </p>
+          )}
+          {chats.map((chat) => (
+            <CommentCard key={chat._id} comment={toCommentType(chat)} />
           ))}
         </section>
         <CommentInput onSend={onSend} />
