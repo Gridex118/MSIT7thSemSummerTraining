@@ -73,5 +73,6 @@ export type ProfileResponseType = {
       workKey: string;
       editionKey: string;
     };
+    readStatus: string;
   }[];
 };

@@ -99,7 +99,10 @@ export async function getBooksInList(id: string) {
   assertValidId(id, "user id");
   const exists = await User.exists({ _id: id });
   if (!exists) throw new ServiceError(404, "User not found");
-  return UserBook.find({ user: id }).populate("book", "title author");
+  return UserBook.find({ user: id }).populate(
+    "book",
+    "title author workKey editionKey",
+  );
 }
 
 export async function joinGroup(id: string, groupId: string) {

@@ -9,6 +9,7 @@ import type {
   BookCommunityType,
   SimilarBookType,
   ReviewType,
+  ReadingStatusType,
 } from "./types";
 import type { OpenLibraryBookType } from "@backend/types";
 
@@ -138,7 +139,6 @@ function BookCommunitySection({ community }: { community: BookCommunityType }) {
   );
 }
 
-type ReadingStatusType = "reading" | "read" | "wantToRead";
 const statusOptions: ReadingStatusType[] = ["reading", "read", "wantToRead"];
 const statusLabels: Record<ReadingStatusType, string> = {
   reading: "Reading",

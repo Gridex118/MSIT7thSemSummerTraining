@@ -19,7 +19,7 @@ function toUserType(profile: ProfileResponseType): UserType {
       name: g.name,
       members: g.memberCount,
     })),
-    books: profile.books.map(({ book }) => ({
+    books: profile.books.map(({ book, readStatus }) => ({
       title: book.title,
       author: book.author ?? "",
       description: "",
@@ -28,6 +28,8 @@ function toUserType(profile: ProfileResponseType): UserType {
       firstPublished: "",
       stats: dummyStats,
       workKey: book.workKey,
+      editionKey: book.editionKey,
+      readStatus: readStatus,
     })),
   };
 }
@@ -92,13 +94,23 @@ function UserSidePanel({ user }: { user: UserType }) {
   );
 }
 
+function readStatusPretty(raw?: string) {
+  const statusLabels: Record<string, string> = {
+    reading: "Reading",
+    read: "Read",
+    planning: "Want to Read",
+  };
+  return raw ? statusLabels[raw] : "";
+}
+
 function UserBookCard({ book }: { book: BookType }) {
   return (
     <Link
-      className="flex flex-col gap-4 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 dark:bg-black dark:shadow-black/60"
-      to={`/book/${book.title}`}
+      className="flex flex-col gap-2 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 dark:bg-black dark:shadow-black/60"
+      to={`/book/${book.workKey}/${book.editionKey}`}
     >
       <BookDescription book={book} />
+      <div>{readStatusPretty(book.readStatus)}</div>
     </Link>
   );
 }
@@ -108,7 +120,7 @@ function UserBookList({ books }: { books: BookType[] }) {
   return (
     <section className="flex flex-col gap-4">
       {books.map((book) => (
-        <UserBookCard key={book.title} book={book} />
+        <UserBookCard key={book.editionKey} book={book} />
       ))}
     </section>
   );
@@ -133,7 +145,9 @@ export default function UserPage() {
     let cancelled = false;
     async function loadUser() {
       try {
-        const res = await fetch(`${PROFILE_URL}/${paramsUserId}`);
+        const res = await fetch(`${PROFILE_URL}/${paramsUserId}`, {
+          cache: "no-store",
+        });
         if (res.status !== 200)
           throw new Error(`Profile failed with status ${res.status}`);
         const profile: ProfileResponseType = await res.json();
