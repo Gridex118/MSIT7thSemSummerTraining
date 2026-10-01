@@ -3,6 +3,8 @@ import Footer from "../common/Footer";
 import useAuth from "../useAuth";
 import type { GroupSummaryType } from "./types";
 import { Link } from "react-router";
+import { useState } from "react";
+import { CreateGroupModal } from "./CreateGroupModal";
 
 const placeholderGroups: GroupSummaryType[] = [
   { slug: "fantasy-fans", name: "Fantasy Fans", members: 1280 },
@@ -44,6 +46,7 @@ function GroupGrid({ groups }: { groups: GroupSummaryType[] }) {
 }
 export default function GroupListPage() {
   const { userId } = useAuth();
+  const [showCreate, setShowCreate] = useState(false);
   const navbarLinks: NavbarLinkType[] = [
     userId ? null : { label: "Home", href: "/" },
     userId
@@ -60,10 +63,22 @@ export default function GroupListPage() {
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"
       />
       <main className="container mx-auto my-24 flex flex-col gap-6 p-4 text-white sm:p-0">
-        <h1 className="text-xl font-bold md:text-center md:text-2xl">
-          Public Groups
-        </h1>
+        <h1 className="text-xl font-bold md:text-center md:text-2xl">Groups</h1>
         <GroupGrid groups={placeholderGroups} />
+        {userId && (
+          <div className="my-8 flex justify-center">
+            <button
+              type="button"
+              className="w-fit rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white shadow-md transition md:text-base dark:bg-black [&:active,&:hover]:-translate-y-1"
+              onClick={() => setShowCreate(true)}
+            >
+              Create Group
+            </button>
+          </div>
+        )}
+        {showCreate && (
+          <CreateGroupModal onClose={() => setShowCreate(false)} />
+        )}
       </main>
       <Footer />
     </div>
