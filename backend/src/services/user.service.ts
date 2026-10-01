@@ -83,7 +83,7 @@ export async function addBooks(
             workKey: b.workKey,
           },
         },
-        { upsert: true, new: true },
+        { upsert: true, returnDocument: "after" },
       );
       await UserBook.updateOne(
         { user: userId, book: book._id },

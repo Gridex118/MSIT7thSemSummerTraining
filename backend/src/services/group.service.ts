@@ -118,7 +118,7 @@ export async function createDiscussion(
   const book = await Book.findOneAndUpdate(
     { editionKey: input.book.editionKey },
     { $setOnInsert: { title: input.book.title, workKey: input.book.workKey } },
-    { upsert: true, new: true },
+    { upsert: true, returnDocument: "after" },
   );
   const discussion = await Discussion.create({
     title: input.title,
