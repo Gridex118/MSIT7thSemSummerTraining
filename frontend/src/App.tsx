@@ -7,10 +7,11 @@ function App() {
   const { userId } = useAuth();
   const navbarLinks: NavbarLinkType[] = [
     { label: "Home", href: "/" },
-    { label: "Books", href: "/books" },
     userId
       ? { label: "Profile", href: `/user/${userId}` }
       : { label: "Sign In", href: "/login" },
+    { label: "Books", href: "/books" },
+    userId ? { label: "Groups", href: "/groups" } : null,
   ];
 
   return (

@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
+import useAuth from "../useAuth";
 import type { SearchResultType } from "./types";
-import type { OpenLibraryBookType } from "../../../../backend/src/services/openLibrary";
+import type { OpenLibraryBookType } from "@backend/types";
 
 const SEARCH_URL = "/v1/openLibrary/search";
 
@@ -89,10 +90,14 @@ function SearchResults({ results }: { results: SearchResultType[] | null }) {
 }
 
 export default function BookSearchPage() {
+  const { userId } = useAuth();
   const navbarLinks: NavbarLinkType[] = [
-    { label: "Home", href: "/" },
+    userId ? null : { label: "Home", href: "/" },
+    userId
+      ? { label: "Profile", href: `/user/${userId}` }
+      : { label: "Sign In", href: "/login" },
     { label: "Books", href: "/books" },
-    { label: "Sign In", href: "/login" },
+    userId ? { label: "Groups", href: "/groups" } : null,
   ];
   const [results, setResults] = useState<SearchResultType[] | null>(null);
   const [query, setQuery] = useState("");

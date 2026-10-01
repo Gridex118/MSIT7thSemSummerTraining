@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
+import useAuth from "../useAuth";
 import type { GroupDetailType, DiscussionType, CommentType } from "./types";
 import { DiscussionModal } from "./DiscussionModal";
 import Footer from "../common/Footer";
@@ -122,9 +123,12 @@ function DiscussionList({
 }
 
 export default function GroupPage() {
+  const { userId } = useAuth();
   const navbarLinks: NavbarLinkType[] = [
-    { label: "Home", href: "/" },
-    { label: "Profile", href: "/user/1" },
+    userId ? null : { label: "Home", href: "/" },
+    userId
+      ? { label: "Profile", href: `/user/${userId}` }
+      : { label: "Sign in", href: "/login" },
     { label: "Books", href: "/books" },
     { label: "Groups", href: "/groups" },
   ];

@@ -3,6 +3,7 @@ import Footer from "../common/Footer";
 import { useState, useEffect } from "react";
 import { Link, useParams, useLocation } from "react-router";
 import BookDescription from "./BookDescription";
+import useAuth from "../useAuth";
 import type {
   BookType,
   BookCommunityType,
@@ -242,16 +243,21 @@ function toBookType(raw: OpenLibraryBookType, description: string): BookType {
 }
 
 export default function BookPage() {
+  const { userId } = useAuth();
   const navbarLinks: NavbarLinkType[] = [
-    { label: "Home", href: "/" },
+    userId ? null : { label: "Home", href: "/" },
+    userId
+      ? { label: "Profile", href: `/user/${userId}` }
+      : { label: "Sign In", href: "/login" },
     { label: "Books", href: "/books" },
-    { label: "Sign In", href: "/login" },
+    userId ? { label: "Groups", href: "/groups" } : null,
   ];
   const isLoggedIn = false;
   const location = useLocation();
   const raw = location.state?.book as OpenLibraryBookType | undefined;
   const [description, setDescription] = useState("");
   const { workKey } = useParams();
+
   useEffect(() => {
     if (!workKey) return;
     let cancelled = false;

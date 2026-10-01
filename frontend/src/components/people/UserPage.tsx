@@ -4,6 +4,7 @@ import BookDescription from "../books/BookDescription";
 import type { BookType } from "../books/types";
 import type { UserType, GroupType } from "./types";
 import { Link } from "react-router";
+import useAuth from "../useAuth";
 
 const placeholderUser: UserType = {
   username: "reader42",
@@ -97,9 +98,12 @@ function UserBookList({ books }: { books: BookType[] }) {
 }
 
 export default function UserPage() {
+  const { userId } = useAuth();
   const navbarLinks: NavbarLinkType[] = [
-    { label: "Home", href: "/" },
-    { label: "Profile", href: "/user/1" },
+    userId ? null : { label: "Home", href: "/" },
+    userId
+      ? { label: "Profile", href: `/user/${userId}` }
+      : { label: "Sign in", href: "/login" },
     { label: "Books", href: "/books" },
     { label: "Groups", href: "/groups" },
   ];

@@ -1,5 +1,6 @@
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
+import useAuth from "../useAuth";
 import type { GroupSummaryType } from "./types";
 import { Link } from "react-router";
 
@@ -42,15 +43,18 @@ function GroupGrid({ groups }: { groups: GroupSummaryType[] }) {
   );
 }
 export default function GroupListPage() {
+  const { userId } = useAuth();
   const navbarLinks: NavbarLinkType[] = [
-    { label: "Home", href: "/" },
-    { label: "Profile", href: "/user/1" },
+    userId ? null : { label: "Home", href: "/" },
+    userId
+      ? { label: "Profile", href: `/user/${userId}` }
+      : { label: "Sign in", href: "/login" },
     { label: "Books", href: "/books" },
     { label: "Groups", href: "/groups" },
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
+    <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
       <Navbar
         links={navbarLinks}
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"
