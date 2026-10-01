@@ -1,7 +1,7 @@
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
 import { useState, useEffect } from "react";
-import { Link, useParams, useLocation } from "react-router";
+import { Link, useParams } from "react-router";
 import BookDescription from "./BookDescription";
 import useAuth from "../useAuth";
 import type {
@@ -11,10 +11,14 @@ import type {
   ReviewType,
   ReadingStatusType,
 } from "./types";
-import type { OpenLibraryBookType } from "@backend/types";
+import type {
+  OpenLibraryEditionType,
+  OpenLibraryWorkType,
+} from "@backend/types";
 
 const COVER_URL = "/v1/openLibrary/covers";
-const DESCR_URL = "/v1/openLibrary/description";
+const WORK_URL = "/v1/openLibrary/work";
+const EDITION_URL = "/v1/openLibrary/edition";
 
 const placeholderCommunity: BookCommunityType = {
   similarBooks: [
@@ -221,8 +225,8 @@ function StarRating({ rating, onChange }: StarRatingProps) {
   );
 }
 
-type BookSidePanelProps = { isLoggedIn: boolean; raw?: OpenLibraryBookType };
-function BookSidePanel({ isLoggedIn, raw }: BookSidePanelProps) {
+type BookSidePanelProps = { isLoggedIn: boolean; book: BookType | null };
+function BookSidePanel({ isLoggedIn, book }: BookSidePanelProps) {
   const { userId, authFetch } = useAuth();
   const [status, setStatus] = useState<ReadingStatusType | null>(null);
   const [rating, setRating] = useState(0);
@@ -231,7 +235,7 @@ function BookSidePanel({ isLoggedIn, raw }: BookSidePanelProps) {
     newStatus: ReadingStatusType | null,
     newRating: number,
   ) {
-    if (!userId || !raw) return;
+    if (!userId || !book) return;
     try {
       const res = await authFetch(`/v1/users/${userId}/books`, {
         method: "POST",
@@ -239,11 +243,11 @@ function BookSidePanel({ isLoggedIn, raw }: BookSidePanelProps) {
         body: JSON.stringify({
           books: [
             {
-              title: raw.title,
-              author: raw.author.name,
-              authorKey: raw.author.authorKey,
-              workKey: raw.workKey,
-              editionKey: raw.editionKey,
+              title: book.title,
+              author: book.author,
+              authorKey: book.author,
+              workKey: book.workKey,
+              editionKey: book.editionKey,
             },
           ],
           readStatus: newStatus ? READ_STATUS_MAP[newStatus] : undefined,
@@ -284,14 +288,21 @@ function BookSidePanel({ isLoggedIn, raw }: BookSidePanelProps) {
 
 const dummyStats = { reading: 1204, read: 58320, wantToRead: 20418 };
 
-function toBookType(raw: OpenLibraryBookType, description: string): BookType {
+function toBookType(
+  work: OpenLibraryWorkType,
+  edition: OpenLibraryEditionType,
+  workKey: string,
+  editionKey: string,
+): BookType {
   return {
-    title: raw.title,
-    author: raw.author.name,
-    description,
-    genres: raw.subjects.slice(0, 8) ?? [],
-    pages: raw.numPages,
-    firstPublished: "1937",
+    title: work.title,
+    workKey,
+    editionKey,
+    author: work.author ?? "",
+    description: work.description ?? "",
+    genres: (work.subjects ?? []).slice(0, 8),
+    pages: edition.number_of_pages ?? 0,
+    firstPublished: edition.publish_date ?? "No Print",
     stats: dummyStats,
   };
 }
@@ -307,47 +318,59 @@ export default function BookPage() {
     userId ? { label: "Groups", href: "/groups" } : null,
   ];
   const isLoggedIn = !!userId;
-  const location = useLocation();
-  const raw = location.state?.book as OpenLibraryBookType | undefined;
-  const [description, setDescription] = useState("");
-  const { workKey } = useParams();
+  const { workKey, editionKey } = useParams();
+  const [book, setBook] = useState<BookType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!workKey) return;
     let cancelled = false;
-    async function loadDescription() {
+    async function loadBook() {
       try {
-        const res = await fetch(`${DESCR_URL}/${workKey}`);
-        if (res.status !== 200)
-          throw new Error(`Description failed with status ${res.status}`);
-        const json: { description: string | null } = await res.json();
-        if (!cancelled) setDescription(json.description ?? "");
+        const resWork = await fetch(`${WORK_URL}/${workKey}`);
+        if (resWork.status !== 200)
+          throw new Error(`Work failed with status ${resWork.status}`);
+        const work: OpenLibraryWorkType = await resWork.json();
+        const resEdition = await fetch(`${EDITION_URL}/${editionKey}`);
+        if (resEdition.status !== 200)
+          throw new Error(`Work failed with status ${resEdition.status}`);
+        const edition: OpenLibraryEditionType = await resEdition.json();
+        if (!cancelled)
+          setBook(toBookType(work, edition, workKey!, editionKey!));
       } catch (err) {
         console.error(err);
-        if (!cancelled) setDescription("");
+        if (!cancelled) setBook(null);
+      } finally {
+        setIsLoading(false);
       }
     }
-    loadDescription();
+    loadBook();
     return () => {
       cancelled = true;
     };
-  }, [workKey]);
-  const book = raw ? toBookType(raw, description) : null;
+  }, [workKey, editionKey]);
 
   return (
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
       <Navbar links={navbarLinks} />
-      <main className="container mx-auto mt-16 mb-24 grid grid-cols-1 gap-4 p-4 sm:mt-4 sm:gap-2 sm:p-0 md:grid-cols-[1fr_2fr] lg:gap-4">
-        <BookSidePanel isLoggedIn={isLoggedIn} raw={raw} />
-        <div className="flex flex-col gap-6 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 md:self-start dark:bg-black dark:shadow-black/60">
-          {book ? (
-            <BookDetailsSection book={book} />
-          ) : (
-            <p className="text-sm font-bold">Book not found</p>
-          )}
-          <BookCommunitySection community={placeholderCommunity} />
+      {isLoading ? (
+        <div className="m-auto flex items-center gap-4 text-white">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+          Loading Results
         </div>
-      </main>
+      ) : (
+        <main className="container mx-auto mt-16 mb-24 grid grid-cols-1 gap-4 p-4 sm:mt-4 sm:gap-2 sm:p-0 md:grid-cols-[1fr_2fr] lg:gap-4">
+          <BookSidePanel isLoggedIn={isLoggedIn} book={book} />
+          <div className="flex flex-col gap-6 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 md:self-start dark:bg-black dark:shadow-black/60">
+            {book ? (
+              <BookDetailsSection book={book} />
+            ) : (
+              <p className="text-sm font-bold">Book not found</p>
+            )}
+            <BookCommunitySection community={placeholderCommunity} />
+          </div>
+        </main>
+      )}
       <Footer />
     </div>
   );

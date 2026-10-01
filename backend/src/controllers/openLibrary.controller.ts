@@ -1,10 +1,7 @@
 import type { Response, Request } from "express";
-import {
-  fetchOpenLibraryDescription,
-  fetchOpenLibrarySearch,
-  getOpenLibraryBookCoverURL,
-  type CoverSizeType,
-} from "../services/openLibrary.service.ts";
+import * as openLibraryService from "../services/openLibrary.service.ts";
+
+import type { CoverSizeType } from "../types.ts";
 
 const WORK_KEY_PATTERN = /^OL\d+W$/;
 const EDITION_KEY_PATTERN = /^OL\d+M$/;
@@ -22,7 +19,11 @@ export async function searchBooks(req: Request, res: Response) {
     return;
   }
   try {
-    const books = await fetchOpenLibrarySearch(query, limit, page);
+    const books = await openLibraryService.fetchOpenLibrarySearch(
+      query,
+      limit,
+      page,
+    );
     res.status(200).json(books ?? []);
   } catch (err) {
     console.error(err);
@@ -40,8 +41,47 @@ export async function getBookDescription(
     return;
   }
   try {
-    const description = await fetchOpenLibraryDescription(workKey);
+    const description =
+      await openLibraryService.fetchOpenLibraryDescription(workKey);
     res.status(200).json({ description });
+  } catch (err) {
+    console.error(err);
+    res.status(502).json({ error: "Failed to fetch from Open Library" });
+  }
+}
+
+export async function getWorkAttributes(
+  req: Request<{ workKey: string }>,
+  res: Response,
+) {
+  const { workKey } = req.params;
+  if (!WORK_KEY_PATTERN.test(workKey)) {
+    res.status(400).json({ error: "Invalid work key" });
+    return;
+  }
+  try {
+    const attributes =
+      await openLibraryService.fetchOpenLibraryWorkAttributes(workKey);
+    res.status(200).json(attributes);
+  } catch (err) {
+    console.error(err);
+    res.status(502).json({ error: "Failed to fetch from Open Library" });
+  }
+}
+
+export async function getEditionAttributes(
+  req: Request<{ editionKey: string }>,
+  res: Response,
+) {
+  const { editionKey } = req.params;
+  if (!EDITION_KEY_PATTERN.test(editionKey)) {
+    res.status(400).json({ error: "Invalid work key" });
+    return;
+  }
+  try {
+    const attributes =
+      await openLibraryService.fetchOpenLibraryEditionAttributes(editionKey);
+    res.status(200).json(attributes);
   } catch (err) {
     console.error(err);
     res.status(502).json({ error: "Failed to fetch from Open Library" });
@@ -62,5 +102,5 @@ export function getBookCover(
     res.status(400).json({ error: "Size must be S, M or L" });
     return;
   }
-  res.redirect(getOpenLibraryBookCoverURL(editionKey, size));
+  res.redirect(openLibraryService.getOpenLibraryBookCoverURL(editionKey, size));
 }

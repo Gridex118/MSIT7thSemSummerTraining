@@ -1,9 +1,17 @@
 import "dotenv/config";
 
-import type { CoverSizeType, OpenLibraryBookType } from "../types.ts";
+import type {
+  CoverSizeType,
+  OpenLibraryBookType,
+  OpenLibraryEditionType,
+  OpenLibraryRawWorkType,
+  OpenLibraryWorkType,
+} from "../types.ts";
 
 const SEARCH_BASE_URL = "https://openlibrary.org/search.json";
 const WORK_BASE_URL = "https://openlibrary.org/works";
+const EDITION_BASE_URL = "https://openlibrary.org/books";
+const AUTHOR_BASE_URL = "https://openlibrary.org/authors";
 const COVERS_BASE_URL = "http://covers.openlibrary.org/b";
 const COVERS_OLID_URL = `${COVERS_BASE_URL}/olid`;
 
@@ -44,6 +52,43 @@ export async function fetchOpenLibraryDescription(
   const json: { description: { value: string } } = await response.json();
 
   return json?.description?.value;
+}
+
+async function fetchOpenLibraryAuthorName(authorKey: string) {
+  const url = `${AUTHOR_BASE_URL}/${authorKey}.json`;
+  const response = await fetchOpenLibrary(url);
+  const json: { personal_name: string } = await response.json();
+  return json.personal_name;
+}
+
+export async function fetchOpenLibraryWorkAttributes(
+  workKey: string,
+): Promise<OpenLibraryWorkType | undefined> {
+  const url = `${WORK_BASE_URL}/${workKey}.json`;
+  const response = await fetchOpenLibrary(url);
+  const json: OpenLibraryRawWorkType = await response.json();
+  const description =
+    typeof json.description === "string"
+      ? json.description
+      : json.description?.value;
+  const authorKey =
+    json.authors && json.authors[0].author.key.replace(/^\/authors\//, "");
+  const author = authorKey && (await fetchOpenLibraryAuthorName(authorKey));
+  return {
+    title: json.title,
+    description,
+    subjects: json.subjects,
+    author,
+  };
+}
+
+export async function fetchOpenLibraryEditionAttributes(
+  editionKey: string,
+): Promise<OpenLibraryEditionType | undefined> {
+  const url = `${EDITION_BASE_URL}/${editionKey}.json`;
+  const response = await fetchOpenLibrary(url);
+  const json: OpenLibraryEditionType = await response.json();
+  return json;
 }
 
 function getOpenLibrarySearchRequestURL(

@@ -23,6 +23,26 @@ export type OpenLibraryBookType = {
   editionKey: string;
 };
 
+export type OpenLibraryRawWorkType = {
+  title: string;
+  description?: string | { value: string };
+  subjects?: string[];
+  authors?: { author: { key: string } }[];
+};
+
+export type OpenLibraryWorkType = {
+  title: string;
+  description?: string;
+  subjects?: string[];
+  author?: string;
+};
+
+export type OpenLibraryEditionType = {
+  title: string;
+  number_of_pages?: number;
+  publish_date?: string;
+};
+
 export type LoginInputType = { identifier: string; password: string };
 
 export type RegisterInputType = {

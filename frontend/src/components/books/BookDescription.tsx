@@ -1,6 +1,8 @@
 import type { BookType } from "./types";
 
 export default function BookDescription({ book }: { book: BookType }) {
+  console.log(book.editionKey);
+
   return (
     <>
       <div>
