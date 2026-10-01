@@ -107,6 +107,8 @@ function ReviewCard({ review }: { review: ReviewType }) {
 }
 
 function BookCommunitySection({ community }: { community: BookCommunityType }) {
+  const { userId } = useAuth();
+
   return (
     <section className="flex flex-col gap-6 border-t border-blue-300 pt-6 dark:border-gray-700">
       <div className="flex flex-col gap-2">
@@ -120,15 +122,17 @@ function BookCommunitySection({ community }: { community: BookCommunityType }) {
         {community.reviews.map((review) => (
           <ReviewCard key={review.id} review={review} />
         ))}
-        <p className="mt-2 text-center text-sm font-bold dark:text-gray-400">
-          <Link
-            className="dark:text-white [&:hover,&:active]:underline"
-            to="/login"
-          >
-            Login
-          </Link>{" "}
-          to add your own review
-        </p>
+        {!userId && (
+          <p className="mt-2 text-center text-sm font-bold dark:text-gray-400">
+            <Link
+              className="dark:text-white [&:hover,&:active]:underline"
+              to="/login"
+            >
+              Login
+            </Link>{" "}
+            to add your own review
+          </p>
+        )}
       </div>
     </section>
   );
@@ -252,7 +256,7 @@ export default function BookPage() {
     { label: "Books", href: "/books" },
     userId ? { label: "Groups", href: "/groups" } : null,
   ];
-  const isLoggedIn = false;
+  const isLoggedIn = !!userId;
   const location = useLocation();
   const raw = location.state?.book as OpenLibraryBookType | undefined;
   const [description, setDescription] = useState("");
