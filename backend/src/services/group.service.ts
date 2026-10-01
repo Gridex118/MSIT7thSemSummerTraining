@@ -7,6 +7,7 @@ import { ServiceError } from "../errors.ts";
 import type {
   CreateGroupInputType,
   CreateDiscussionInputType,
+  GroupType,
 } from "../types.ts";
 
 const AVATAR_PATH = "/uploads/avatars";
@@ -43,12 +44,16 @@ export async function updateGroupAvatar(
   return group;
 }
 
-export async function getPublicGroups() {
+export async function getPublicGroups(): Promise<GroupType[]> {
   const groups = await Group.find({ visibility: "public" })
     .select("name description avatar members")
     .lean();
-  return groups.map(({ members, ...rest }) => ({
-    ...rest,
+  return groups.map(({ members, _id, name, description, avatar }) => ({
+    _id: String(_id),
+    name,
+    description,
+    avatar,
+    members,
     memberCount: members.length,
   }));
 }

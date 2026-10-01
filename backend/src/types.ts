@@ -96,3 +96,11 @@ export type ProfileResponseType = {
     readStatus: string;
   }[];
 };
+
+export type GroupType = {
+  _id: string;
+  name: string;
+  description: string;
+  memberCount: number;
+  avatar?: string | null;
+};
