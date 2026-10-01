@@ -108,7 +108,7 @@ function RegistrationForm() {
           setValue={setEmail}
           name="register-email"
           placeholder="Email"
-          fieldType="mail"
+          fieldType="email"
         />
         <RegistrationFormField
           value={password}
