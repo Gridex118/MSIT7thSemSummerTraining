@@ -3,7 +3,7 @@ import Footer from "../common/Footer";
 import BookDescription from "../books/BookDescription";
 import type { BookType } from "../books/types";
 import type { UserType, GroupType } from "./types";
-import { Link } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import useAuth from "../useAuth";
 
 const placeholderUser: UserType = {
@@ -58,13 +58,30 @@ function GroupCard({ group }: { group: GroupType }) {
 }
 
 function UserSidePanel({ user }: { user: UserType }) {
+  const { userId, logout } = useAuth();
+  const { userId: paramsUserId } = useParams();
+  const navigate = useNavigate();
+
   return (
     <aside className="flex flex-col gap-6 md:sticky md:top-20 md:left-0 md:self-start">
       <div className="flex flex-col gap-4">
         <UserAvatar />
-        <h1 className="text-center text-xl font-bold md:text-2xl">
-          {user.username}
-        </h1>
+        <div>
+          <h1 className="text-center text-xl font-bold md:text-2xl">
+            {user.username}
+            {userId === paramsUserId && (
+              <button
+                className="ml-2 w-fit cursor-pointer text-base text-red-100 underline dark:text-red-400"
+                onClick={() => {
+                  logout();
+                  navigate("/");
+                }}
+              >
+                /Log Out
+              </button>
+            )}
+          </h1>
+        </div>
       </div>
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-bold md:text-xl">Groups</h2>
