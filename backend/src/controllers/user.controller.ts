@@ -34,7 +34,7 @@ export async function loginUser(req: Request, res: Response) {
       identifier: String(identifier),
       password: String(password),
     });
-    res.json(result);
+    res.status(200).json(result);
   } catch (err) {
     handleError(res, err);
   }
