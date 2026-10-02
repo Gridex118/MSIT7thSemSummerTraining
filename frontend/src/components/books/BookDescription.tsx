@@ -1,8 +1,6 @@
 import type { BookType } from "./types";
 
 export default function BookDescription({ book }: { book: BookType }) {
-  console.log(book.editionKey);
-
   return (
     <>
       <div>
@@ -11,7 +9,7 @@ export default function BookDescription({ book }: { book: BookType }) {
           by {book.author}
         </p>
       </div>
-      <p className="text-sm">{book.description}</p>
+      <p className="text-sm break-all">{book.description}</p>
       <ul className="flex flex-wrap gap-2">
         {book.genres.map((genre) => (
           <li
