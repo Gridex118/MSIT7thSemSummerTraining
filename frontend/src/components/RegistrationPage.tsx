@@ -1,12 +1,32 @@
-import { Link } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
 import Navbar, { type NavbarLinkType } from "./common/Navbar";
 import Footer from "./common/Footer";
-import React, { useState, type SetStateAction } from "react";
+import useAuth from "./useAuth";
+import { useState, type SubmitEventHandler } from "react";
+import type { RegisterInputType } from "@backend/types";
+
+const REGISTER_URL = "/v1/users";
+type RegistrationResType = { token: string; user: { _id: string } };
+async function registerUser(input: RegisterInputType) {
+  const response = await fetch(REGISTER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (response.status === 502) throw new Error("Could not connect to server");
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error);
+  const {
+    token,
+    user: { _id: userId },
+  }: RegistrationResType = data;
+  return { token, userId };
+}
 
 type RegistrationFormFieldProps = {
   name: string;
   value: string;
-  setValue: React.Dispatch<SetStateAction<string>>;
+  setValue: (_: string) => void;
   placeholder: string;
   fieldType?: string;
 };
@@ -30,16 +50,42 @@ function RegistrationFormField({
 }
 
 function RegistrationForm() {
+  const [errorMessage, setErrorMessage] = useState("");
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
+  const { login, userId } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit: SubmitEventHandler = async (e) => {
+    e.preventDefault();
+    try {
+      const { token, userId } = await registerUser({
+        name: fullName,
+        username,
+        email,
+        password,
+      });
+      login(token);
+      navigate(`/user/${userId}`, { replace: true });
+    } catch (err) {
+      if (err instanceof Error) {
+        setErrorMessage(err.message);
+      } else {
+        setErrorMessage(String(err));
+      }
+    }
+  };
+
+  if (userId) return <Navigate to={`/user/${userId}`} replace />;
 
   return (
     <form
       className="flex flex-col justify-center gap-8 px-4 py-8 md:min-w-80 lg:min-w-90"
       id="login-form"
+      onSubmit={handleSubmit}
     >
       <p className="self-center text-xl font-bold md:text-2xl">
         Create an Account
@@ -62,25 +108,42 @@ function RegistrationForm() {
           setValue={setEmail}
           name="register-email"
           placeholder="Email"
-          fieldType="mail"
+          fieldType="email"
         />
         <RegistrationFormField
           value={password}
-          setValue={setPassword}
+          setValue={(value) => {
+            if (value !== repeatPassword) {
+              setErrorMessage("Passwords do not match");
+            } else {
+              setErrorMessage("");
+            }
+            setPassword(value);
+          }}
           name="register-password"
           placeholder="Password"
           fieldType="password"
         />
         <RegistrationFormField
           value={repeatPassword}
-          setValue={setRepeatPassword}
+          setValue={(value) => {
+            if (value !== password) {
+              setErrorMessage("Passwords do not match");
+            } else {
+              setErrorMessage("");
+            }
+            setRepeatPassword(value);
+          }}
           name="register-password-confirm"
           placeholder="Retype Password"
           fieldType="password"
         />
       </div>
       <div>
-        <button className="w-full rounded-full border border-blue-300 bg-white p-2 text-sm font-bold text-blue-500 transition md:text-base dark:border-gray-700 dark:text-black [&:active,&:hover]:-translate-y-1">
+        <button
+          type="submit"
+          className="w-full rounded-full border border-blue-300 bg-white p-2 text-sm font-bold text-blue-500 transition md:text-base dark:border-gray-700 dark:text-black [&:active,&:hover]:-translate-y-1"
+        >
           Create Account
         </button>
         <p className="mt-2 text-center text-sm font-bold dark:text-gray-400">
@@ -91,6 +154,11 @@ function RegistrationForm() {
           >
             Sign In
           </Link>
+        </p>
+        <p
+          className={`text-center text-base font-semibold text-red-200 dark:text-red-400 ${!errorMessage && "!text-transparent"}`}
+        >
+          * {errorMessage}
         </p>
       </div>
     </form>

@@ -19,11 +19,11 @@ const routes = [
     element: <BookSearchPage />,
   },
   {
-    path: "book/:bookId",
+    path: "book/:workKey/:editionKey",
     element: <BookPage />,
   },
   {
-    path: "user/:bookId",
+    path: "user/:userId",
     element: <UserPage />,
   },
   {

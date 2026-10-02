@@ -1,16 +1,17 @@
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
+import useAuth from "../useAuth";
 import type { GroupSummaryType } from "./types";
 import { Link } from "react-router";
+import { useState, useEffect } from "react";
+import { CreateGroupModal } from "./CreateGroupModal";
+import type { GroupType } from "@backend/types";
 
-const placeholderGroups: GroupSummaryType[] = [
-  { slug: "fantasy-fans", name: "Fantasy Fans", members: 1280 },
-  { slug: "classics-club", name: "Classics Club", members: 342 },
-  { slug: "night-owl-readers", name: "Night Owl Readers", members: 87 },
-  { slug: "sci-fi-society", name: "Sci-Fi Society", members: 956 },
-  { slug: "mystery-book-club", name: "Mystery Book Club", members: 514 },
-  { slug: "poetry-corner", name: "Poetry Corner", members: 129 },
-];
+const GROUPS_URL = "/v1/groups";
+function toGroupSummary(group: GroupType): GroupSummaryType {
+  return { slug: group._id, name: group.name, members: group.memberCount };
+}
+
 function GroupSummaryAvatar() {
   return (
     <div className="aspect-square w-16 shrink-0 rounded-xl bg-blue-500 dark:bg-gray-600"></div>
@@ -42,24 +43,60 @@ function GroupGrid({ groups }: { groups: GroupSummaryType[] }) {
   );
 }
 export default function GroupListPage() {
+  const { userId } = useAuth();
+  const [showCreate, setShowCreate] = useState(false);
+  const [groups, setGroups] = useState<GroupSummaryType[]>([]);
   const navbarLinks: NavbarLinkType[] = [
-    { label: "Home", href: "/" },
-    { label: "Profile", href: "/user/1" },
+    userId ? null : { label: "Home", href: "/" },
+    userId
+      ? { label: "Profile", href: `/user/${userId}` }
+      : { label: "Sign in", href: "/login" },
     { label: "Books", href: "/books" },
     { label: "Groups", href: "/groups" },
   ];
+  useEffect(() => {
+    let cancelled = false;
+    async function loadGroups() {
+      try {
+        const res = await fetch(GROUPS_URL, { cache: "no-store" });
+        if (res.status !== 200)
+          throw new Error(`Groups failed with status ${res.status}`);
+        const json: GroupType[] = await res.json();
+        if (!cancelled) setGroups(json.map(toGroupSummary));
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setGroups([]);
+      }
+    }
+    loadGroups();
+    return () => {
+      cancelled = true;
+    };
+  }, [showCreate]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
+    <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
       <Navbar
         links={navbarLinks}
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"
       />
       <main className="container mx-auto my-24 flex flex-col gap-6 p-4 text-white sm:p-0">
-        <h1 className="text-xl font-bold md:text-center md:text-2xl">
-          Public Groups
-        </h1>
-        <GroupGrid groups={placeholderGroups} />
+        <h1 className="text-xl font-bold md:text-center md:text-2xl">Groups</h1>
+        <GroupGrid groups={groups} />
+        {userId && (
+          <div className="my-8 flex justify-center">
+            <button
+              type="button"
+              className="w-fit rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white shadow-md transition md:text-base dark:bg-black [&:active,&:hover]:-translate-y-1"
+              onClick={() => setShowCreate(true)}
+            >
+              Create Group
+            </button>
+          </div>
+        )}
+        {showCreate && (
+          <CreateGroupModal onClose={() => setShowCreate(false)} />
+        )}
       </main>
       <Footer />
     </div>

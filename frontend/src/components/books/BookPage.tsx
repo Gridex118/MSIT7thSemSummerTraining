@@ -1,54 +1,21 @@
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
-import { useState } from "react";
-import { Link } from "react-router";
+import { useState, useEffect, type SubmitEventHandler } from "react";
+import { Link, useParams } from "react-router";
 import BookDescription from "./BookDescription";
+import useAuth from "../useAuth";
+import type { BookType, ReadingStatusType } from "./types";
 import type {
-  BookType,
-  BookCommunityType,
-  SimilarBookType,
-  ReviewType,
-} from "./types";
+  OpenLibraryEditionType,
+  OpenLibraryWorkType,
+  ProfileResponseType,
+  BookReviewType,
+} from "@backend/types";
 
-const placeholderBook: BookType = {
-  title: "The Hobbit",
-  author: "J.R.R. Tolkien",
-  description:
-    "Bilbo Baggins is swept into an unexpected journey to reclaim a lost dwarf kingdom from the dragon Smaug.",
-  genres: ["Fantasy", "Adventure", "Classic"],
-  pages: 310,
-  firstPublished: "1937",
-  stats: { reading: 1204, read: 58320, wantToRead: 20418 },
-};
-
-const placeholderCommunity: BookCommunityType = {
-  similarBooks: [
-    {
-      slug: "the-fellowship-of-the-ring",
-      title: "The Fellowship of the Ring",
-      author: "J.R.R. Tolkien",
-    },
-    {
-      slug: "the-name-of-the-wind",
-      title: "The Name of the Wind",
-      author: "Patrick Rothfuss",
-    },
-  ],
-  reviews: [
-    {
-      id: 1,
-      user: "reader42",
-      rating: 5,
-      content: "A cozy, timeless adventure that I keep coming back to.",
-    },
-    {
-      id: 2,
-      user: "pagesurfer",
-      rating: 4,
-      content: "Slow start, but the second half more than makes up for it.",
-    },
-  ],
-};
+const COVER_URL = "/v1/openLibrary/covers";
+const WORK_URL = "/v1/openLibrary/work";
+const EDITION_URL = "/v1/openLibrary/edition";
+const BOOKS_URL = "/v1/books";
 
 type StatBoxProps = { label: string; value: number };
 function StatBox({ label, value }: StatBoxProps) {
@@ -88,69 +55,171 @@ function BookDetailsSection({ book }: { book: BookType }) {
   );
 }
 
-function SimilarBookCard({ book }: { book: SimilarBookType }) {
-  return (
-    <Link
-      className="rounded-xl border border-blue-300 p-2 px-4 transition dark:border-gray-700 [&:active,&:hover]:-translate-y-1"
-      to={`/book/${book.slug}`}
-    >
-      <p className="text-sm font-bold">{book.title}</p>
-      <p className="text-xs font-semibold dark:text-gray-400">{book.author}</p>
-    </Link>
-  );
-}
-
-function ReviewCard({ review }: { review: ReviewType }) {
+function ReviewCard({ review }: { review: BookReviewType }) {
   return (
     <div className="flex flex-col gap-1 rounded-xl border border-blue-300 p-2 px-4 dark:border-gray-700">
-      <div className="flex justify-between text-sm font-bold">
-        <p>{review.user}</p>
-        <p>{review.rating} / 5</p>
-      </div>
-      <p className="text-sm">{review.content}</p>
+      <Link to={`/user/${review.user._id}`} className="text-sm font-bold">
+        {review.user.username}
+      </Link>
+      <p className="text-sm">{review.reviewText}</p>
     </div>
   );
 }
 
-function BookCommunitySection({ community }: { community: BookCommunityType }) {
+function ReviewInput({
+  workKey,
+  onAdded,
+}: {
+  workKey: string;
+  onAdded: (review: BookReviewType) => void;
+}) {
+  const { authFetch } = useAuth();
+  const [text, setText] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const handleSubmit: SubmitEventHandler = async (e) => {
+    e.preventDefault();
+    const trimmed = text.trim();
+    if (!trimmed || submitting) return;
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await authFetch(`${BOOKS_URL}/${workKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewText: trimmed }),
+      });
+      if (res.status === 409) {
+        setError("You have already reviewed this book.");
+        return;
+      }
+      if (res.status !== 201)
+        throw new Error(`Add review failed with status ${res.status}`);
+      const review: BookReviewType = await res.json();
+      onAdded(review);
+      setText("");
+    } catch (err) {
+      console.error(err);
+      setError("Could not add your review. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form className="mt-2 flex flex-col gap-2" onSubmit={handleSubmit}>
+      <textarea
+        className="min-h-24 resize-none rounded-xl border border-blue-300 p-2 px-4 text-sm font-semibold outline-0 focus:border-blue-100 dark:border-gray-700 focus:dark:border-gray-500"
+        name="review-text"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Write your review"
+      />
+      {error && (
+        <p className="text-center text-sm font-bold text-red-300">{error}</p>
+      )}
+      <button
+        type="submit"
+        disabled={submitting || !text.trim()}
+        className="rounded-full border border-blue-300 bg-white p-2 text-sm font-bold text-blue-500 transition disabled:opacity-50 dark:border-gray-700 dark:text-black [&:active:not(:disabled),&:hover:not(:disabled)]:-translate-y-1"
+      >
+        {submitting ? "Posting..." : "Add Review"}
+      </button>
+    </form>
+  );
+}
+
+function BookCommunitySection({ workKey }: { workKey: string }) {
+  const { userId } = useAuth();
+  const [reviews, setReviews] = useState<BookReviewType[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    async function loadReviews() {
+      try {
+        const res = await fetch(`${BOOKS_URL}/${workKey}`, {
+          cache: "no-store",
+        });
+        if (res.status !== 200)
+          throw new Error(`Reviews failed with status ${res.status}`);
+        const json: BookReviewType[] = await res.json();
+        if (!cancelled) setReviews(json);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setReviews([]);
+      }
+    }
+    loadReviews();
+    return () => {
+      cancelled = true;
+    };
+  }, [workKey]);
+  const hasReviewed = !!userId && reviews.some((r) => r.user._id === userId);
+
   return (
     <section className="flex flex-col gap-6 border-t border-blue-300 pt-6 dark:border-gray-700">
       <div className="flex flex-col gap-2">
-        <h2 className="text-lg font-bold md:text-xl">Similar Books</h2>
-        {community.similarBooks.map((book) => (
-          <SimilarBookCard key={book.slug} book={book} />
-        ))}
-      </div>
-      <div className="flex flex-col gap-2">
         <h2 className="text-lg font-bold md:text-xl">Reviews</h2>
-        {community.reviews.map((review) => (
-          <ReviewCard key={review.id} review={review} />
+        {reviews.length === 0 && (
+          <p className="text-sm font-semibold dark:text-gray-400">
+            No reviews yet
+          </p>
+        )}
+        {reviews.map((review) => (
+          <ReviewCard key={review.user._id} review={review} />
         ))}
-        <p className="mt-2 text-center text-sm font-bold dark:text-gray-400">
-          <Link
-            className="dark:text-white [&:hover,&:active]:underline"
-            to="/login"
-          >
-            Login
-          </Link>{" "}
-          to add your own review
-        </p>
+        {userId && !hasReviewed && (
+          <ReviewInput
+            workKey={workKey}
+            onAdded={(review) => setReviews((current) => [review, ...current])}
+          />
+        )}
+        {!userId && (
+          <p className="mt-2 text-center text-gray-200 dark:text-gray-300">
+            <Link className="font-semibold text-white" to="/login">
+              Log in
+            </Link>{" "}
+            to add your own review
+          </p>
+        )}
       </div>
     </section>
   );
 }
 
-type ReadingStatusType = "reading" | "read" | "wantToRead";
 const statusOptions: ReadingStatusType[] = ["reading", "read", "wantToRead"];
 const statusLabels: Record<ReadingStatusType, string> = {
   reading: "Reading",
   read: "Read",
   wantToRead: "Want to Read",
 };
+const READ_STATUS_MAP: Record<ReadingStatusType, string> = {
+  reading: "reading",
+  read: "read",
+  wantToRead: "planning",
+};
+const STATUS_FROM_BACKEND: Record<string, ReadingStatusType> = {
+  reading: "reading",
+  read: "read",
+  planning: "wantToRead",
+};
 
 function CoverImage() {
+  const { editionKey } = useParams();
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const src = `${COVER_URL}/${editionKey}?size=L`;
+  console.log(src);
+
+  if (!editionKey || failedKey === editionKey)
+    return (
+      <div className="aspect-2/3 w-full rounded-xl bg-blue-500 text-blue-500 dark:bg-gray-600 dark:text-black"></div>
+    );
   return (
-    <div className="aspect-2/3 w-full rounded-xl bg-blue-500 text-blue-500 dark:bg-gray-600 dark:text-black"></div>
+    <img
+      className="aspect-2/3 w-full rounded-xl object-cover"
+      src={src}
+      alt="Book cover"
+      onError={() => setFailedKey(editionKey)}
+    />
   );
 }
 
@@ -179,65 +248,171 @@ function ReadingStatusToggle({ status, onChange }: ReadingStatusToggleProps) {
   );
 }
 
-type StarRatingProps = { rating: number; onChange: (rating: number) => void };
-function StarRating({ rating, onChange }: StarRatingProps) {
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <p className="text-sm font-bold dark:text-gray-400">Your Rating</p>
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            className={`text-2xl transition [&:active,&:hover]:-translate-y-1 ${
-              star <= rating
-                ? "text-yellow-300"
-                : "text-blue-300 dark:text-gray-700"
-            }`}
-            onClick={() => onChange(star === rating ? 0 : star)}
-          >
-            ★
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-type BookSidePanelProps = { isLoggedIn: boolean };
-function BookSidePanel({ isLoggedIn }: BookSidePanelProps) {
+type BookSidePanelProps = { isLoggedIn: boolean; book: BookType | null };
+function BookSidePanel({ isLoggedIn, book }: BookSidePanelProps) {
+  const { userId, authFetch } = useAuth();
   const [status, setStatus] = useState<ReadingStatusType | null>(null);
-  const [rating, setRating] = useState(0);
+  const editionKey = book?.editionKey;
+  useEffect(() => {
+    if (!userId || !editionKey) {
+      return;
+    }
+    let cancelled = false;
+    async function loadStatus() {
+      try {
+        const res = await fetch(`/v1/users/${userId}`, { cache: "no-store" });
+        if (res.status !== 200)
+          throw new Error(`Profile failed with status ${res.status}`);
+        const profile: ProfileResponseType = await res.json();
+        const entry = profile.books.find(
+          (b) => b.book.editionKey === editionKey,
+        );
+        if (!cancelled)
+          setStatus(
+            entry ? (STATUS_FROM_BACKEND[entry.readStatus] ?? null) : null,
+          );
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setStatus(null);
+      }
+    }
+    loadStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, editionKey]);
+  async function saveBook(
+    newStatus: ReadingStatusType,
+    previous: ReadingStatusType | null,
+  ) {
+    if (!userId || !book) return;
+    try {
+      const res = await authFetch(`/v1/users/${userId}/books`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          books: [
+            {
+              title: book.title,
+              author: book.author,
+              authorKey: book.author,
+              workKey: book.workKey,
+              editionKey: book.editionKey,
+            },
+          ],
+          readStatus: READ_STATUS_MAP[newStatus],
+        }),
+      });
+      if (res.status !== 200)
+        throw new Error(`Add book failed with status ${res.status}`);
+    } catch (err) {
+      console.error(err);
+      setStatus(previous);
+    }
+  }
+  function handleStatusChange(newStatus: ReadingStatusType | null) {
+    const previous = status;
+    setStatus(newStatus);
+    if (newStatus) saveBook(newStatus, previous);
+  }
 
   return (
     <aside className="flex flex-col gap-4 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 md:self-start dark:bg-black dark:shadow-black/60">
       <CoverImage />
       {isLoggedIn && (
-        <ReadingStatusToggle status={status} onChange={setStatus} />
+        <ReadingStatusToggle status={status} onChange={handleStatusChange} />
       )}
-      {isLoggedIn && <StarRating rating={rating} onChange={setRating} />}
     </aside>
   );
 }
 
+const dummyStats = { reading: 1204, read: 58320, wantToRead: 20418 };
+
+function toBookType(
+  work: OpenLibraryWorkType,
+  edition: OpenLibraryEditionType,
+  workKey: string,
+  editionKey: string,
+): BookType {
+  return {
+    title: work.title,
+    workKey,
+    editionKey,
+    author: work.author ?? "",
+    description: work.description ?? "",
+    genres: (work.subjects ?? []).slice(0, 8),
+    pages: edition.number_of_pages ?? 0,
+    firstPublished: edition.publish_date ?? "No Print",
+    stats: dummyStats,
+  };
+}
+
 export default function BookPage() {
+  const { userId } = useAuth();
   const navbarLinks: NavbarLinkType[] = [
-    { label: "Home", href: "/" },
+    userId ? null : { label: "Home", href: "/" },
+    userId
+      ? { label: "Profile", href: `/user/${userId}` }
+      : { label: "Sign In", href: "/login" },
     { label: "Books", href: "/books" },
-    { label: "Sign In", href: "/login" },
+    userId ? { label: "Groups", href: "/groups" } : null,
   ];
-  const isLoggedIn = false;
+  const isLoggedIn = !!userId;
+  const { workKey, editionKey } = useParams();
+  const [book, setBook] = useState<BookType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!workKey) return;
+    let cancelled = false;
+    async function loadBook() {
+      try {
+        const resWork = await fetch(`${WORK_URL}/${workKey}`);
+        if (resWork.status !== 200)
+          throw new Error(`Work failed with status ${resWork.status}`);
+        const work: OpenLibraryWorkType = await resWork.json();
+        const resEdition = await fetch(`${EDITION_URL}/${editionKey}`);
+        if (resEdition.status !== 200)
+          throw new Error(`Work failed with status ${resEdition.status}`);
+        const edition: OpenLibraryEditionType = await resEdition.json();
+        if (!cancelled)
+          setBook(toBookType(work, edition, workKey!, editionKey!));
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setBook(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadBook();
+    return () => {
+      cancelled = true;
+    };
+  }, [workKey, editionKey]);
 
   return (
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
       <Navbar links={navbarLinks} />
-      <main className="container mx-auto mt-16 mb-24 grid grid-cols-1 gap-4 p-4 sm:mt-4 sm:gap-2 sm:p-0 md:grid-cols-[1fr_2fr] lg:gap-4">
-        <BookSidePanel isLoggedIn={isLoggedIn} />
-        <div className="flex flex-col gap-6 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 md:self-start dark:bg-black dark:shadow-black/60">
-          <BookDetailsSection book={placeholderBook} />
-          <BookCommunitySection community={placeholderCommunity} />
+      {isLoading ? (
+        <div className="m-auto flex items-center gap-4 text-white">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+          Loading Results
         </div>
-      </main>
+      ) : (
+        <main className="container mx-auto mt-16 mb-24 grid grid-cols-1 gap-4 p-4 sm:mt-4 sm:gap-2 sm:p-0 md:grid-cols-[1fr_2fr] lg:gap-4">
+          <BookSidePanel isLoggedIn={isLoggedIn} book={book} />
+          <div className="flex flex-col gap-6 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 md:self-start dark:bg-black dark:shadow-black/60">
+            {book ? (
+              <>
+                <BookDetailsSection book={book} />
+                <BookCommunitySection workKey={book?.workKey} />
+              </>
+            ) : (
+              <p className="text-sm font-bold">Book not found</p>
+            )}
+          </div>
+        </main>
+      )}
       <Footer />
     </div>
   );

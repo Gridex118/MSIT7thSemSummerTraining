@@ -1,12 +1,17 @@
 import Navbar, { type NavbarLinkType } from "./components/common/Navbar";
 import Footer from "./components/common/Footer";
 import Hero from "./components/Hero";
+import useAuth from "./components/useAuth";
 
 function App() {
+  const { userId } = useAuth();
   const navbarLinks: NavbarLinkType[] = [
     { label: "Home", href: "/" },
+    userId
+      ? { label: "Profile", href: `/user/${userId}` }
+      : { label: "Sign In", href: "/login" },
     { label: "Books", href: "/books" },
-    { label: "Sign In", href: "/login" },
+    userId ? { label: "Groups", href: "/groups" } : null,
   ];
 
   return (

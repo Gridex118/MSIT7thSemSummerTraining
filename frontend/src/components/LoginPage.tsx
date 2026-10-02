@@ -1,7 +1,30 @@
-import { Link } from "react-router";
+import { Link, useNavigate, Navigate } from "react-router";
+import useAuth from "./useAuth";
 import Navbar, { type NavbarLinkType } from "./common/Navbar";
 import Footer from "./common/Footer";
-import React, { useState, type SetStateAction } from "react";
+import React, {
+  useState,
+  type SetStateAction,
+  type SubmitEventHandler,
+} from "react";
+
+const LOGIN_URL = "/v1/users/login";
+type LoginResType = { token: string; user: { _id: string } };
+async function loginUser(input: { identifier: string; password: string }) {
+  const response = await fetch(LOGIN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (response.status === 502) throw new Error("Could not connect to server");
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error);
+  const {
+    token,
+    user: { _id: userId },
+  }: LoginResType = data;
+  return { token, userId };
+}
 
 type LoginFormFieldProps = {
   name: string;
@@ -30,13 +53,37 @@ function LoginFormField({
 }
 
 function LoginForm() {
+  const [errorMessage, setErrorMessage] = useState("");
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { login, userId } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit: SubmitEventHandler = async (e) => {
+    e.preventDefault();
+    try {
+      const { token, userId } = await loginUser({
+        identifier: usernameOrEmail,
+        password,
+      });
+      login(token);
+      navigate(`/user/${userId}`, { replace: true });
+    } catch (err) {
+      if (err instanceof Error) {
+        setErrorMessage(err.message);
+      } else {
+        setErrorMessage(String(err));
+      }
+    }
+  };
+
+  if (userId) return <Navigate to={`/user/${userId}`} replace />;
 
   return (
     <form
       className="flex flex-col justify-center gap-8 px-4 py-8 md:min-w-80"
       id="login-form"
+      onSubmit={handleSubmit}
     >
       <p className="self-center text-xl font-bold md:text-2xl">Welcome Back</p>
       <div className="flex flex-col gap-2">
@@ -66,6 +113,11 @@ function LoginForm() {
           >
             Sign Up
           </Link>
+        </p>
+        <p
+          className={`text-center text-base font-semibold text-red-200 dark:text-red-400 ${!errorMessage && "!text-transparent"}`}
+        >
+          * {errorMessage}
         </p>
       </div>
     </form>

@@ -71,7 +71,7 @@ function NavLink({ label, href, isScrolled }: NavLinkProps) {
   );
 }
 
-export type NavbarLinkType = { label: string; href: string };
+export type NavbarLinkType = { label: string; href: string } | null;
 type NavbarProps = {
   links: NavbarLinkType[];
   forcesdBGColor?: string;
@@ -114,14 +114,17 @@ export default function Navbar({ links, forcesdBGColor }: NavbarProps) {
         <ul
           className={`navbar__links ${!isMobileNavOpen && "hidden md:flex"} mt-12 mr-1 flex flex-col gap-8 md:mt-0 md:h-fit md:flex-row md:flex-wrap md:gap-4`}
         >
-          {links.map(({ label, href }) => (
-            <NavLink
-              key={label}
-              label={label}
-              href={href}
-              isScrolled={isScrolled}
-            />
-          ))}
+          {links.map(
+            (link) =>
+              link && (
+                <NavLink
+                  key={link.label}
+                  label={link.label}
+                  href={link.href}
+                  isScrolled={isScrolled}
+                />
+              ),
+          )}
         </ul>
       </nav>
     </header>

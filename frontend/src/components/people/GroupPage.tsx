@@ -1,57 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
-import type { GroupDetailType, DiscussionType, CommentType } from "./types";
+import useAuth from "../useAuth";
+import type { DiscussionType } from "./types";
 import { DiscussionModal } from "./DiscussionModal";
+import type { GroupDetailsType } from "@backend/types";
 import Footer from "../common/Footer";
+import { Link, useParams } from "react-router";
+import { CreateDiscussionModal } from "./CreateDiscussionModal";
 
-const placeholderGroup: GroupDetailType = {
-  name: "Fantasy Fans",
-  description:
-    "A group for readers of epic quests, dragons and worlds worth getting lost in.",
-  members: 1280,
-  discussions: [
-    {
-      id: 1,
-      title: "Is the second half worth the slow start?",
-      bookTitle: "The Hobbit",
-    },
-    {
-      id: 2,
-      title: "Kvothe as an unreliable narrator",
-      bookTitle: "The Name of the Wind",
-    },
-    { id: 3, title: "Favorite riddle scene", bookTitle: "The Hobbit" },
-  ],
-};
+const GROUP_URL = "/v1/groups";
 
-const placeholderComments: CommentType[] = [
-  {
-    id: 1,
-    user: "reader42",
-    date: "Sep 21, 2026",
-    message:
-      "The pacing picks up a lot once they reach Mirkwood, so I'd say yes.",
-  },
-  {
-    id: 2,
-    user: "pagesurfer",
-    date: "Sep 22, 2026",
-    message:
-      "Agreed, and the riddle scene alone makes the first few chapters worth it.",
-  },
-  {
-    id: 3,
-    user: "night_owl",
-    date: "Sep 24, 2026",
-    message: "I almost quit around chapter 3, so I'm glad I stuck with it.",
-  },
-  {
-    id: 4,
-    user: "night_owl",
-    date: "Sep 24, 2026",
-    message: "I almost quit around chapter 3, so I'm glad I stuck with it.",
-  },
-];
+function toDiscussionType(
+  d: GroupDetailsType["discussions"][number],
+): DiscussionType {
+  return { id: d._id, title: d.title, bookTitle: d.book.title };
+}
 
 function GroupAvatar() {
   return (
@@ -59,7 +22,34 @@ function GroupAvatar() {
   );
 }
 
-function GroupSidePanel({ group }: { group: GroupDetailType }) {
+const USERS_URL = "/v1/users";
+type GroupSidePanelProps = { group: GroupDetailsType; onChanged: () => void };
+function GroupSidePanel({ group, onChanged }: GroupSidePanelProps) {
+  const { userId, authFetch } = useAuth();
+  const [pending, setPending] = useState(false);
+  const isOwner = userId === group.ownerId;
+  const isMemberOfGroup =
+    isOwner || group.members.some(({ _id }) => _id === userId);
+  async function updateMembership(method: "POST" | "DELETE") {
+    if (!userId || pending) return;
+    setPending(true);
+    try {
+      const res = await authFetch(
+        `${USERS_URL}/${userId}/groups/${group._id}`,
+        { method },
+      );
+      if (res.status !== 200)
+        throw new Error(
+          `${method} membership failed with status ${res.status}`,
+        );
+      onChanged();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
     <aside className="flex flex-col gap-6 md:sticky md:top-20 md:left-0 md:self-start">
       <div className="flex flex-col gap-4">
@@ -68,8 +58,30 @@ function GroupSidePanel({ group }: { group: GroupDetailType }) {
           {group.name}
         </h1>
         <p className="text-center text-xs font-semibold dark:text-gray-400">
-          {group.members.toLocaleString()} members
+          {group.memberCount.toLocaleString()} members
         </p>
+        {userId &&
+          (isMemberOfGroup ? (
+            !isOwner && (
+              <button
+                type="button"
+                disabled={pending}
+                className="cursor-pointer text-red-200 hover:underline disabled:opacity-50 dark:text-red-500"
+                onClick={() => updateMembership("DELETE")}
+              >
+                / Leave Group
+              </button>
+            )
+          ) : (
+            <button
+              type="button"
+              disabled={pending}
+              className="cursor-pointer text-green-200 hover:underline disabled:opacity-50 dark:text-green-500"
+              onClick={() => updateMembership("POST")}
+            >
+              / Join Group
+            </button>
+          ))}
       </div>
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-bold md:text-xl">About</h2>
@@ -110,25 +122,63 @@ function DiscussionList({
   return (
     <section className="flex flex-col gap-4">
       <h2 className="mt-4 text-lg font-bold sm:mt-0 md:text-xl">Discussions</h2>
-      {discussions.map((discussion) => (
-        <DiscussionCard
-          key={discussion.id}
-          discussion={discussion}
-          onSelect={onSelect}
-        />
-      ))}
+      {discussions.length <= 0 ? (
+        <p>This group has no discussions yet</p>
+      ) : (
+        discussions.map((discussion) => (
+          <DiscussionCard
+            key={discussion.id}
+            discussion={discussion}
+            onSelect={onSelect}
+          />
+        ))
+      )}
     </section>
   );
 }
 
 export default function GroupPage() {
+  const { groupId } = useParams();
+  const { userId } = useAuth();
   const navbarLinks: NavbarLinkType[] = [
-    { label: "Home", href: "/" },
-    { label: "Profile", href: "/user/1" },
+    userId ? null : { label: "Home", href: "/" },
+    userId
+      ? { label: "Profile", href: `/user/${userId}` }
+      : { label: "Sign in", href: "/login" },
     { label: "Books", href: "/books" },
     { label: "Groups", href: "/groups" },
   ];
+  const [group, setGroup] = useState<GroupDetailsType | null>(null);
   const [selected, setSelected] = useState<DiscussionType | null>(null);
+  const [showDiscussionCreateModel, setShowDiscussionCreateModal] =
+    useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
+  const isMemberOfGroup =
+    userId === group?.ownerId ||
+    group?.members.find(({ _id }) => _id === userId);
+
+  useEffect(() => {
+    if (!groupId) return;
+    let cancelled = false;
+    async function loadGroup() {
+      try {
+        const res = await fetch(`${GROUP_URL}/${groupId}`, {
+          cache: "no-store",
+        });
+        if (res.status !== 200)
+          throw new Error(`Group failed with status ${res.status}`);
+        const json: GroupDetailsType = await res.json();
+        if (!cancelled) setGroup(json);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setGroup(null);
+      }
+    }
+    loadGroup();
+    return () => {
+      cancelled = true;
+    };
+  }, [groupId, showDiscussionCreateModel, refreshCount]);
 
   return (
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
@@ -137,19 +187,50 @@ export default function GroupPage() {
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"
       />
       <main className="container mx-auto my-24 grid grid-cols-1 gap-4 p-4 text-white sm:gap-2 sm:p-0 md:relative md:grid-cols-[1fr_2fr] lg:gap-4 lg:gap-8">
-        <GroupSidePanel group={placeholderGroup} />
-        <DiscussionList
-          discussions={placeholderGroup.discussions}
-          onSelect={setSelected}
-        />
+        {group ? (
+          <>
+            <GroupSidePanel
+              group={group}
+              onChanged={() => setRefreshCount((prev) => prev + 1)}
+            />
+            <div className="flex flex-col gap-6">
+              <DiscussionList
+                discussions={group.discussions.map(toDiscussionType)}
+                onSelect={setSelected}
+              />
+              {isMemberOfGroup ? (
+                <button
+                  type="button"
+                  className="w-fit rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white shadow-md transition md:text-base dark:bg-black [&:active,&:hover]:-translate-y-1"
+                  onClick={() => setShowDiscussionCreateModal(true)}
+                >
+                  Start New Discussion
+                </button>
+              ) : (
+                <p className="text-gray-200 dark:text-gray-300">
+                  <Link className="font-semibold text-white" to="/login">
+                    Log in
+                  </Link>{" "}
+                  to start a new discussion
+                </p>
+              )}
+              {showDiscussionCreateModel && (
+                <CreateDiscussionModal
+                  groupId={groupId!}
+                  onClose={() => setShowDiscussionCreateModal(false)}
+                />
+              )}
+            </div>
+          </>
+        ) : (
+          <p className="text-sm font-bold">Group not found</p>
+        )}
       </main>
       <Footer />
       {selected && (
         <DiscussionModal
-          discussion={selected}
-          comments={placeholderComments}
+          discussionId={selected.id}
           onClose={() => setSelected(null)}
-          onSend={(message) => console.log(message)}
         />
       )}
     </div>

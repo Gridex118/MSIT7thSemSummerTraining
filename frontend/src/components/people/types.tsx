@@ -3,26 +3,20 @@ import { type BookType } from "../books/types";
 export type GroupType = { slug: string; name: string; members: number };
 
 export type UserType = {
+  name: string;
   username: string;
   groups: GroupType[];
   books: BookType[];
 };
 
 export type DiscussionType = {
-  id: number;
+  id: string;
   title: string;
   bookTitle: string;
 };
 
-export type GroupDetailType = {
-  name: string;
-  description: string;
-  members: number;
-  discussions: DiscussionType[];
-};
-
 export type CommentType = {
-  id: number;
+  id: string;
   user: string;
   date: string;
   message: string;
