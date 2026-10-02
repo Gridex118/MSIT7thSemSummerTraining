@@ -134,3 +134,14 @@ export type UserGroupInputType = {
   userId: string;
   groupId: string;
 };
+
+export type BookReviewInputType = {
+  userId: string;
+  workKey: string;
+  reviewText: string;
+};
+
+export type BookReviewType = {
+  user: { _id: string; username: string };
+  reviewText: string;
+};
