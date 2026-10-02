@@ -76,7 +76,7 @@ export type ChatContentType = "text" | "image";
 
 export type CreateChatInputType = {
   sender: string;
-  contentType: ChatContentType;
+  contentType?: ChatContentType;
   content: string;
 };
 

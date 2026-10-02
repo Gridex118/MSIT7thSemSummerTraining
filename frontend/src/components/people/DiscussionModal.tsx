@@ -1,6 +1,13 @@
 import type { CommentType } from "./types";
-import { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  type SetStateAction,
+  type SubmitEventHandler,
+} from "react";
+import { Link } from "react-router";
 import type { ChatType } from "@backend/types";
+import useAuth from "../useAuth";
 
 function toCommentType(chat: ChatType): CommentType {
   return {
@@ -35,22 +42,56 @@ function CommentCard({ comment }: { comment: CommentType }) {
 type DiscussionModalProps = {
   discussionId: string;
   onClose: () => void;
-  onSend: (message: string) => void;
 };
 
-function CommentInput({ onSend }: { onSend: (message: string) => void }) {
+const DISCUSSIONS_URL = "/v1/discussions";
+type CommentInputProps = {
+  discussionId: string;
+  setLastMessage: React.Dispatch<SetStateAction<string>>;
+};
+function CommentInput({ discussionId, setLastMessage }: CommentInputProps) {
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { userId, authFetch } = useAuth();
+
+  if (!userId)
+    return (
+      <p className="text-center text-blue-100 dark:text-gray-200">
+        <Link to="/login" className="cursor-pointer font-semibold text-white">
+          Log in
+        </Link>{" "}
+        to add comments
+      </p>
+    );
+
+  const handleSubmit: SubmitEventHandler = async (e) => {
+    e.preventDefault();
+    const trimmed = message.trim();
+    if (!trimmed || submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await authFetch(`${DISCUSSIONS_URL}/${discussionId}/chats`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: trimmed }),
+      });
+      if (res.status !== 201)
+        throw new Error(`Send comment failed with status ${res.status}`);
+      setMessage("");
+      const { _id: chatId } = await res.json();
+      console.log(chatId);
+      setLastMessage(chatId);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <form
       className="flex flex-col gap-x-4 gap-y-2 md:flex-row"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const trimmed = message.trim();
-        if (!trimmed) return;
-        onSend(trimmed);
-        setMessage("");
-      }}
+      onSubmit={handleSubmit}
     >
       <input
         className="min-w-0 flex-1 rounded-full border border-blue-300 px-4 py-3 text-sm font-semibold outline-0 focus:border-blue-100 dark:border-gray-700 focus:dark:border-gray-500"
@@ -61,7 +102,7 @@ function CommentInput({ onSend }: { onSend: (message: string) => void }) {
       />
       <button
         type="submit"
-        disabled={!message.trim()}
+        disabled={submitting || !message.trim()}
         className="rounded-full border border-blue-300 bg-white px-8 py-3 text-sm font-bold text-blue-500 transition disabled:opacity-50 dark:border-gray-700 dark:text-black [&:active:not(:disabled),&:hover:not(:disabled)]:-translate-y-1"
       >
         Send
@@ -73,9 +114,9 @@ function CommentInput({ onSend }: { onSend: (message: string) => void }) {
 export function DiscussionModal({
   discussionId,
   onClose,
-  onSend,
 }: DiscussionModalProps) {
   const [chats, setChats] = useState<ChatType[]>([]);
+  const [lastMessage, setLastMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -89,8 +130,7 @@ export function DiscussionModal({
 
   useEffect(() => {
     let cancelled = false;
-
-    const loadChats = async () => {
+    async function loadChats() {
       try {
         const res = await fetch(`/v1/discussions/${discussionId}/chats`);
         if (!res.ok)
@@ -103,13 +143,12 @@ export function DiscussionModal({
       } finally {
         if (!cancelled) setLoading(false);
       }
-    };
-
+    }
     loadChats();
     return () => {
       cancelled = true;
     };
-  }, [discussionId]);
+  }, [discussionId, lastMessage]);
 
   return (
     <div
@@ -153,7 +192,10 @@ export function DiscussionModal({
             <CommentCard key={chat._id} comment={toCommentType(chat)} />
           ))}
         </section>
-        <CommentInput onSend={onSend} />
+        <CommentInput
+          discussionId={discussionId}
+          setLastMessage={setLastMessage}
+        />
       </div>
     </div>
   );

@@ -192,7 +192,6 @@ export default function GroupPage() {
         <DiscussionModal
           discussionId={selected.id}
           onClose={() => setSelected(null)}
-          onSend={(message) => console.log(message)}
         />
       )}
     </div>

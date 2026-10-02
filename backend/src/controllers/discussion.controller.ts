@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import * as discussionService from "../services/discussion.service.ts";
-import { ServiceError, handleError } from "../errors.ts";
+import { handleError } from "../errors.ts";
 import type { ChatContentType } from "../types.ts";
 
 const CONTENT_TYPES = ["text", "image"];
