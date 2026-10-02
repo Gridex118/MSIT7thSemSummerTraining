@@ -4,7 +4,7 @@ import express, { type Request, type Response } from "express";
 import cookieParser from "cookie-parser";
 import multer from "multer";
 import type { NextFunction } from "express";
-import mongoose from "mongoose";
+import { connectToMongoDB, disconnectFromMongoDB } from "./atlas.ts";
 
 import openLibraryRouter from "./routes/openLibrary.routes.ts";
 import userRouter from "./routes/user.routes.ts";
@@ -12,8 +12,7 @@ import groupRouter from "./routes/group.routes.ts";
 import discussionRouter from "./routes/discussion.routes.ts";
 import bookRouter from "./routes/book.routes.ts";
 
-const mongoDBURI = process.env.MONGODB_URI;
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 const app = express();
 
 app.use(express.json());
@@ -45,17 +44,25 @@ app.use("/v1/discussions", discussionRouter);
 app.use("/v1/books", bookRouter);
 
 async function serve() {
-  if (!mongoDBURI) {
-    console.log("MongoDB URI not provided");
-    return;
+  try {
+    await connectToMongoDB();
+    app.listen(PORT, () => {
+      console.log(`Express listening on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err);
+    process.exit(1);
   }
-  mongoose
-    .connect(mongoDBURI)
-    .then(() => {
-      app.listen(PORT, () => {
-        console.log(`Express listening on port ${PORT}`);
-      });
-    })
-    .catch((err) => console.error(err));
 }
+
 serve();
+
+process.on("SIGINT", async () => {
+  await disconnectFromMongoDB();
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  await disconnectFromMongoDB();
+  process.exit(0);
+});
