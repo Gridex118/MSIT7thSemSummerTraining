@@ -1,0 +1,17 @@
+{
+  "services": {
+    "web": {
+      "root": "frontend/",
+      "framework": "vite",
+      "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+    },
+    "api": {
+      "root": "backend/",
+      "framework": "express"
+    }
+  },
+  "rewrites": [
+    { "source": "/v1/(.*)", "destination": { "service": "api" } },
+    { "source": "/(.*)", "destination": { "service": "web" } }
+  ]
+}
