@@ -57,8 +57,8 @@ export async function fetchOpenLibraryDescription(
 async function fetchOpenLibraryAuthorName(authorKey: string) {
   const url = `${AUTHOR_BASE_URL}/${authorKey}.json`;
   const response = await fetchOpenLibrary(url);
-  const json: { personal_name: string } = await response.json();
-  return json.personal_name;
+  const json: { personal_name?: string; name?: string } = await response.json();
+  return json.personal_name ?? json.name ?? "Unknown Author";
 }
 
 export async function fetchOpenLibraryWorkAttributes(
