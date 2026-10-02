@@ -22,12 +22,7 @@ export type SimilarBookType = {
 export type ReviewType = {
   id: number;
   user: string;
-  rating: number;
   content: string;
-};
-
-export type BookCommunityType = {
-  reviews: ReviewType[];
 };
 
 export type SearchResultType = {

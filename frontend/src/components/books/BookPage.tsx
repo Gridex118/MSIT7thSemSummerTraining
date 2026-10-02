@@ -1,41 +1,21 @@
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type SubmitEventHandler } from "react";
 import { Link, useParams } from "react-router";
 import BookDescription from "./BookDescription";
 import useAuth from "../useAuth";
-import type {
-  BookType,
-  BookCommunityType,
-  ReviewType,
-  ReadingStatusType,
-} from "./types";
+import type { BookType, ReadingStatusType } from "./types";
 import type {
   OpenLibraryEditionType,
   OpenLibraryWorkType,
   ProfileResponseType,
+  BookReviewType,
 } from "@backend/types";
 
 const COVER_URL = "/v1/openLibrary/covers";
 const WORK_URL = "/v1/openLibrary/work";
 const EDITION_URL = "/v1/openLibrary/edition";
-
-const placeholderCommunity: BookCommunityType = {
-  reviews: [
-    {
-      id: 1,
-      user: "reader42",
-      rating: 5,
-      content: "A cozy, timeless adventure that I keep coming back to.",
-    },
-    {
-      id: 2,
-      user: "pagesurfer",
-      rating: 4,
-      content: "Slow start, but the second half more than makes up for it.",
-    },
-  ],
-};
+const BOOKS_URL = "/v1/books";
 
 type StatBoxProps = { label: string; value: number };
 function StatBox({ label, value }: StatBoxProps) {
@@ -75,35 +55,128 @@ function BookDetailsSection({ book }: { book: BookType }) {
   );
 }
 
-function ReviewCard({ review }: { review: ReviewType }) {
+function ReviewCard({ review }: { review: BookReviewType }) {
   return (
     <div className="flex flex-col gap-1 rounded-xl border border-blue-300 p-2 px-4 dark:border-gray-700">
-      <div className="flex justify-between text-sm font-bold">
-        <p>{review.user}</p>
-        <p>{review.rating} / 5</p>
-      </div>
-      <p className="text-sm">{review.content}</p>
+      <Link to={`/user/${review.user._id}`} className="text-sm font-bold">
+        {review.user.username}
+      </Link>
+      <p className="text-sm">{review.reviewText}</p>
     </div>
   );
 }
 
-function BookCommunitySection({ community }: { community: BookCommunityType }) {
+function ReviewInput({
+  workKey,
+  onAdded,
+}: {
+  workKey: string;
+  onAdded: (review: BookReviewType) => void;
+}) {
+  const { authFetch } = useAuth();
+  const [text, setText] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const handleSubmit: SubmitEventHandler = async (e) => {
+    e.preventDefault();
+    const trimmed = text.trim();
+    if (!trimmed || submitting) return;
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await authFetch(`${BOOKS_URL}/${workKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewText: trimmed }),
+      });
+      if (res.status === 409) {
+        setError("You have already reviewed this book.");
+        return;
+      }
+      if (res.status !== 201)
+        throw new Error(`Add review failed with status ${res.status}`);
+      const review: BookReviewType = await res.json();
+      onAdded(review);
+      setText("");
+    } catch (err) {
+      console.error(err);
+      setError("Could not add your review. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form className="mt-2 flex flex-col gap-2" onSubmit={handleSubmit}>
+      <textarea
+        className="min-h-24 resize-none rounded-xl border border-blue-300 p-2 px-4 text-sm font-semibold outline-0 focus:border-blue-100 dark:border-gray-700 focus:dark:border-gray-500"
+        name="review-text"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Write your review"
+      />
+      {error && (
+        <p className="text-center text-sm font-bold text-red-300">{error}</p>
+      )}
+      <button
+        type="submit"
+        disabled={submitting || !text.trim()}
+        className="rounded-full border border-blue-300 bg-white p-2 text-sm font-bold text-blue-500 transition disabled:opacity-50 dark:border-gray-700 dark:text-black [&:active:not(:disabled),&:hover:not(:disabled)]:-translate-y-1"
+      >
+        {submitting ? "Posting..." : "Add Review"}
+      </button>
+    </form>
+  );
+}
+
+function BookCommunitySection({ workKey }: { workKey: string }) {
   const { userId } = useAuth();
+  const [reviews, setReviews] = useState<BookReviewType[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    async function loadReviews() {
+      try {
+        const res = await fetch(`${BOOKS_URL}/${workKey}`, {
+          cache: "no-store",
+        });
+        if (res.status !== 200)
+          throw new Error(`Reviews failed with status ${res.status}`);
+        const json: BookReviewType[] = await res.json();
+        if (!cancelled) setReviews(json);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setReviews([]);
+      }
+    }
+    loadReviews();
+    return () => {
+      cancelled = true;
+    };
+  }, [workKey]);
+  const hasReviewed = !!userId && reviews.some((r) => r.user._id === userId);
 
   return (
     <section className="flex flex-col gap-6 border-t border-blue-300 pt-6 dark:border-gray-700">
       <div className="flex flex-col gap-2">
         <h2 className="text-lg font-bold md:text-xl">Reviews</h2>
-        {community.reviews.map((review) => (
-          <ReviewCard key={review.id} review={review} />
+        {reviews.length === 0 && (
+          <p className="text-sm font-semibold dark:text-gray-400">
+            No reviews yet
+          </p>
+        )}
+        {reviews.map((review) => (
+          <ReviewCard key={review.user._id} review={review} />
         ))}
+        {userId && !hasReviewed && (
+          <ReviewInput
+            workKey={workKey}
+            onAdded={(review) => setReviews((current) => [review, ...current])}
+          />
+        )}
         {!userId && (
-          <p className="mt-2 text-center text-sm font-bold dark:text-gray-400">
-            <Link
-              className="dark:text-white [&:hover,&:active]:underline"
-              to="/login"
-            >
-              Login
+          <p className="mt-2 text-center text-gray-200 dark:text-gray-300">
+            <Link className="font-semibold text-white" to="/login">
+              Log in
             </Link>{" "}
             to add your own review
           </p>
@@ -330,11 +403,13 @@ export default function BookPage() {
           <BookSidePanel isLoggedIn={isLoggedIn} book={book} />
           <div className="flex flex-col gap-6 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 md:self-start dark:bg-black dark:shadow-black/60">
             {book ? (
-              <BookDetailsSection book={book} />
+              <>
+                <BookDetailsSection book={book} />
+                <BookCommunitySection workKey={book?.workKey} />
+              </>
             ) : (
               <p className="text-sm font-bold">Book not found</p>
             )}
-            <BookCommunitySection community={placeholderCommunity} />
           </div>
         </main>
       )}
