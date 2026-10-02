@@ -3,6 +3,7 @@ import { type BookType } from "../books/types";
 export type GroupType = { slug: string; name: string; members: number };
 
 export type UserType = {
+  name: string;
   username: string;
   groups: GroupType[];
   books: BookType[];

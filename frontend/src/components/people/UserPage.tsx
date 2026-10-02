@@ -1,6 +1,5 @@
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
-import BookDescription from "../books/BookDescription";
 import useAuth from "../useAuth";
 import type { ProfileResponseType } from "@backend/types";
 import type { BookType } from "../books/types";
@@ -10,10 +9,12 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
 const PROFILE_URL = "/v1/users";
+const COVER_URL = "/v1/openLibrary/covers";
 const dummyStats = { reading: 1204, read: 58320, wantToRead: 20418 };
 function toUserType(profile: ProfileResponseType): UserType {
   return {
     username: profile.username,
+    name: profile.name,
     groups: profile.groups.map((g) => ({
       slug: g._id,
       name: g.name,
@@ -36,7 +37,38 @@ function toUserType(profile: ProfileResponseType): UserType {
 
 function UserAvatar() {
   return (
-    <div className="aspect-square w-40 self-center rounded-full bg-blue-600 dark:bg-black"></div>
+    <div className="aspect-square w-28 shrink-0 rounded-full bg-blue-600 md:w-32 dark:bg-black"></div>
+  );
+}
+
+function UserProfile({ user }: { user: UserType }) {
+  const { userId, logout } = useAuth();
+  const { userId: paramsUserId } = useParams();
+  const navigate = useNavigate();
+
+  return (
+    <section className="flex flex-col items-center gap-4 md:col-start-2 md:row-start-1 md:flex-row md:gap-6">
+      <UserAvatar />
+      <div className="flex flex-col gap-1">
+        <h1 className="text-center text-xl font-bold md:text-left md:text-2xl">
+          {user.username}
+          {userId === paramsUserId && (
+            <button
+              className="ml-2 w-fit cursor-pointer text-base text-red-100 hover:underline dark:text-red-400"
+              onClick={() => {
+                logout();
+                navigate("/");
+              }}
+            >
+              / Log Out
+            </button>
+          )}
+        </h1>
+        <p className="text-center text-sm font-semibold text-blue-100 md:text-left dark:text-gray-400">
+          {user.name}
+        </p>
+      </div>
+    </section>
   );
 }
 
@@ -47,7 +79,7 @@ function GroupCard({ group }: { group: GroupType }) {
       to={`/group/${group.slug}`}
     >
       <p className="text-sm font-bold">{group.name}</p>
-      <p className="text-xs font-semibold dark:text-gray-400">
+      <p className="text-xs font-semibold text-blue-100 dark:text-gray-400">
         {group.members.toLocaleString()} members
       </p>
     </Link>
@@ -55,40 +87,15 @@ function GroupCard({ group }: { group: GroupType }) {
 }
 
 function UserSidePanel({ user }: { user: UserType }) {
-  const { userId, logout } = useAuth();
-  const { userId: paramsUserId } = useParams();
-  const navigate = useNavigate();
-
   return (
-    <aside className="flex flex-col gap-6 md:sticky md:top-20 md:left-0 md:self-start">
-      <div className="flex flex-col gap-4">
-        <UserAvatar />
-        <div>
-          <h1 className="text-center text-xl font-bold md:text-2xl">
-            {user.username}
-            {userId === paramsUserId && (
-              <button
-                className="ml-2 w-fit cursor-pointer text-base text-red-100 hover:underline dark:text-red-400"
-                onClick={() => {
-                  logout();
-                  navigate("/");
-                }}
-              >
-                / Log Out
-              </button>
-            )}
-          </h1>
-        </div>
-      </div>
+    <aside className="flex flex-col gap-2 md:sticky md:top-20 md:col-start-1 md:row-span-2 md:row-start-1 md:self-start">
+      <h2 className="text-lg font-bold md:text-xl">Groups</h2>
       {user.groups.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-bold md:text-xl">Groups</h2>
-          {user.groups.map((group) => (
-            <GroupCard key={group.slug} group={group} />
-          ))}
-        </div>
+        user.groups.map((group) => <GroupCard key={group.slug} group={group} />)
       ) : (
-        <p>User has not joined any groups</p>
+        <p className="text-sm font-semibold text-blue-100 dark:text-gray-400">
+          User has not joined any groups
+        </p>
       )}
     </aside>
   );
@@ -104,24 +111,56 @@ function readStatusPretty(raw?: string) {
 }
 
 function UserBookCard({ book }: { book: BookType }) {
+  const status = readStatusPretty(book.readStatus);
+
   return (
     <Link
-      className="flex flex-col gap-2 rounded-xl bg-blue-600 p-4 text-white shadow-lg shadow-blue-700/40 dark:bg-black dark:shadow-black/60"
+      className="group flex items-center gap-4 py-3"
       to={`/book/${book.workKey}/${book.editionKey}`}
     >
-      <BookDescription book={book} />
-      <div>{readStatusPretty(book.readStatus)}</div>
+      <div className="aspect-2/3 w-12 shrink-0 overflow-hidden rounded bg-blue-600 shadow-md shadow-blue-700/40 dark:bg-black dark:shadow-black/60">
+        <img
+          className="h-full w-full object-cover"
+          src={`${COVER_URL}/${book.editionKey}?size=S`}
+          alt={`Cover of ${book.title}`}
+          loading="lazy"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <p className="truncate text-sm font-bold group-hover:underline md:text-base">
+          {book.title}
+        </p>
+        <p className="truncate text-xs font-semibold text-blue-100 dark:text-gray-400">
+          {book.author}
+        </p>
+      </div>
+      {status && (
+        <span className="shrink-0 rounded-full border border-blue-300 px-3 py-0.5 text-xs font-bold dark:border-gray-700">
+          {status}
+        </span>
+      )}
     </Link>
   );
 }
 
-function UserBookList({ books }: { books: BookType[] }) {
-  if (books.length <= 0) return <p>User has yet to add any books</p>;
+function UserBookList({ name, books }: { name: string; books: BookType[] }) {
   return (
-    <section className="flex flex-col gap-4">
-      {books.map((book) => (
-        <UserBookCard key={book.editionKey} book={book} />
-      ))}
+    <section className="flex flex-col gap-2 md:col-start-2 md:row-start-2">
+      <h2 className="text-lg font-bold md:text-xl">{name}'s list</h2>
+      {books.length <= 0 ? (
+        <p className="text-sm font-semibold text-blue-100 dark:text-gray-400">
+          User has yet to add any books
+        </p>
+      ) : (
+        <div className="flex flex-col divide-y divide-blue-400/50 dark:divide-gray-700">
+          {books.map((book) => (
+            <UserBookCard key={book.editionKey} book={book} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -177,14 +216,15 @@ export default function UserPage() {
           Loading Results
         </div>
       ) : (
-        <main className="container mx-auto my-24 grid grid-cols-1 gap-4 p-4 text-white sm:gap-2 sm:p-0 md:relative md:grid-cols-[1fr_2fr] lg:gap-4">
+        <main className="mx-auto my-24 grid w-full max-w-6xl grid-cols-1 gap-8 px-4 text-white md:grid-cols-[1fr_2.5fr] md:gap-x-12">
           {user ? (
             <>
+              <UserProfile user={user} />
               <UserSidePanel user={user} />
-              <UserBookList books={user.books} />
+              <UserBookList name={user.name} books={user.books} />
             </>
           ) : (
-            <p className="text-sm font-bold">User not found</p>
+            <p className="text-sm font-bold md:col-span-2">User not found</p>
           )}
         </main>
       )}
