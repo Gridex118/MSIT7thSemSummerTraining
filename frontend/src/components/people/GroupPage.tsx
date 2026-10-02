@@ -22,10 +22,33 @@ function GroupAvatar() {
   );
 }
 
-function GroupSidePanel({ group }: { group: GroupDetailsType }) {
-  const { userId } = useAuth();
+const USERS_URL = "/v1/users";
+type GroupSidePanelProps = { group: GroupDetailsType; onChanged: () => void };
+function GroupSidePanel({ group, onChanged }: GroupSidePanelProps) {
+  const { userId, authFetch } = useAuth();
+  const [pending, setPending] = useState(false);
+  const isOwner = userId === group.ownerId;
   const isMemberOfGroup =
-    userId === group.ownerId || group.members.find(({ _id }) => _id === userId);
+    isOwner || group.members.some(({ _id }) => _id === userId);
+  async function updateMembership(method: "POST" | "DELETE") {
+    if (!userId || pending) return;
+    setPending(true);
+    try {
+      const res = await authFetch(
+        `${USERS_URL}/${userId}/groups/${group._id}`,
+        { method },
+      );
+      if (res.status !== 200)
+        throw new Error(
+          `${method} membership failed with status ${res.status}`,
+        );
+      onChanged();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <aside className="flex flex-col gap-6 md:sticky md:top-20 md:left-0 md:self-start">
@@ -39,11 +62,23 @@ function GroupSidePanel({ group }: { group: GroupDetailsType }) {
         </p>
         {userId &&
           (isMemberOfGroup ? (
-            <button className="cursor-pointer text-red-200 hover:underline dark:text-red-500">
-              / Leave Group
-            </button>
+            !isOwner && (
+              <button
+                type="button"
+                disabled={pending}
+                className="cursor-pointer text-red-200 hover:underline disabled:opacity-50 dark:text-red-500"
+                onClick={() => updateMembership("DELETE")}
+              >
+                / Leave Group
+              </button>
+            )
           ) : (
-            <button className="cursor-pointer text-green-200 hover:underline dark:text-green-500">
+            <button
+              type="button"
+              disabled={pending}
+              className="cursor-pointer text-green-200 hover:underline disabled:opacity-50 dark:text-green-500"
+              onClick={() => updateMembership("POST")}
+            >
               / Join Group
             </button>
           ))}
@@ -117,6 +152,7 @@ export default function GroupPage() {
   const [selected, setSelected] = useState<DiscussionType | null>(null);
   const [showDiscussionCreateModel, setShowDiscussionCreateModal] =
     useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
   const isMemberOfGroup =
     userId === group?.ownerId ||
     group?.members.find(({ _id }) => _id === userId);
@@ -142,7 +178,7 @@ export default function GroupPage() {
     return () => {
       cancelled = true;
     };
-  }, [groupId, showDiscussionCreateModel]);
+  }, [groupId, showDiscussionCreateModel, refreshCount]);
 
   return (
     <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
@@ -153,7 +189,10 @@ export default function GroupPage() {
       <main className="container mx-auto my-24 grid grid-cols-1 gap-4 p-4 text-white sm:gap-2 sm:p-0 md:relative md:grid-cols-[1fr_2fr] lg:gap-4 lg:gap-8">
         {group ? (
           <>
-            <GroupSidePanel group={group} />
+            <GroupSidePanel
+              group={group}
+              onChanged={() => setRefreshCount((prev) => prev + 1)}
+            />
             <div className="flex flex-col gap-6">
               <DiscussionList
                 discussions={group.discussions.map(toDiscussionType)}
