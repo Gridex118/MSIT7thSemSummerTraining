@@ -1,6 +1,8 @@
-# MSIT 7th Semester Summer Training
+# MSIT 7th Semester Summer Training: BooksGroup
 
-This is a *(admittedly basic)* web development project made as part of the 7th semester summer training at MSIT.
+This is a *(admittedly basic)* web development project made as part of the 7th semester summer training (from NIELIT, Karkardooma) at MSIT.
+
+A book tracking and discussion app with groups, reviews and Open Library API integration. Built with React, Express, MongoDB; written in TypeScript.
 
 
 ## Template Taken from Vite/react-ts
