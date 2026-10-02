@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import useAuth from "../useAuth";
-import type { DiscussionType, CommentType } from "./types";
+import type { DiscussionType } from "./types";
 import { DiscussionModal } from "./DiscussionModal";
 import type { GroupDetailsType } from "@backend/types";
 import Footer from "../common/Footer";
@@ -15,35 +15,6 @@ function toDiscussionType(
 ): DiscussionType {
   return { id: d._id, title: d.title, bookTitle: d.book.title };
 }
-
-const placeholderComments: CommentType[] = [
-  {
-    id: 1,
-    user: "reader42",
-    date: "Sep 21, 2026",
-    message:
-      "The pacing picks up a lot once they reach Mirkwood, so I'd say yes.",
-  },
-  {
-    id: 2,
-    user: "pagesurfer",
-    date: "Sep 22, 2026",
-    message:
-      "Agreed, and the riddle scene alone makes the first few chapters worth it.",
-  },
-  {
-    id: 3,
-    user: "night_owl",
-    date: "Sep 24, 2026",
-    message: "I almost quit around chapter 3, so I'm glad I stuck with it.",
-  },
-  {
-    id: 4,
-    user: "night_owl",
-    date: "Sep 24, 2026",
-    message: "I almost quit around chapter 3, so I'm glad I stuck with it.",
-  },
-];
 
 function GroupAvatar() {
   return (

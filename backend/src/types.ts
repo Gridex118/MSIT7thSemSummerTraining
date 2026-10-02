@@ -127,5 +127,5 @@ export type ChatType = {
   _id: string;
   sender: { _id: string; username: string; avatar?: string };
   content: string;
-  sentAt: NativeDate;
+  sentAt: string;
 };

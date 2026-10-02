@@ -30,7 +30,8 @@ export async function getChats(id: string): Promise<ChatType[]> {
       "_id username avatar",
     )
     .lean();
-  return chatDocs.map(({ _id, sender, ...rest }) => ({
+  return chatDocs.map(({ _id, sender, sentAt, ...rest }) => ({
+    sentAt: sentAt.toLocaleString(),
     ...rest,
     sender: {
       username: sender.username,
