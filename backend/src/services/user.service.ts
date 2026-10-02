@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { isValidObjectId, Types } from "mongoose";
 import bcrypt from "bcrypt";
 import { User } from "../models/user.model.ts";
@@ -15,7 +16,9 @@ import type {
 
 const SALT_ROUNDS = 10;
 const DUMMY_HASH = bcrypt.hashSync("dummy password", SALT_ROUNDS);
-const AVATAR_PATH = "/uploads/avatars";
+const AVATAR_PATH = process.env.VERCEL
+  ? "/tmp/uploads/avatars"
+  : "uploads/avatars";
 
 function assertValidId(id: string, label: string) {
   if (!isValidObjectId(id)) throw new ServiceError(400, `Invalid ${label}`);

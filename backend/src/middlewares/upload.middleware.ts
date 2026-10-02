@@ -1,9 +1,13 @@
+import "dotenv/config";
+
 import type { Request } from "express";
 import multer from "multer";
 import path from "node:path";
 import fs from "fs";
 
-const AVATAR_DIR = path.join("uploads", "avatars");
+const AVATAR_DIR = process.env.VERCEL
+  ? "/tmp/uploads/avatars"
+  : path.join("uploads", "avatars");
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const EXTENSIONS: Record<string, string> = {
   "image/jpeg": ".jpg",
