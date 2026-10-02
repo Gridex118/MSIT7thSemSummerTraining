@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { isValidObjectId, Types } from "mongoose";
 import { Book } from "../models/book.model.ts";
 import { Group } from "../models/group.model.ts";
@@ -11,7 +12,9 @@ import type {
   GroupDetailsType,
 } from "../types.ts";
 
-const AVATAR_PATH = "/uploads/avatars";
+const AVATAR_PATH = process.env.VERCEL
+  ? "/tmp/uploads/avatars"
+  : "uploads/avatars";
 
 function assertValidId(id: string, label: string) {
   if (!isValidObjectId(id)) throw new ServiceError(400, `Invalid ${label}`);

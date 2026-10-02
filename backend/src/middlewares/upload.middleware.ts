@@ -1,5 +1,4 @@
 import multer from "multer";
-
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 

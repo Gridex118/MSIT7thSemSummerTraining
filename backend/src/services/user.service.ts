@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { isValidObjectId, Types } from "mongoose";
 import bcrypt from "bcrypt";
 import { User } from "../models/user.model.ts";
