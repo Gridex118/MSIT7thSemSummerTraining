@@ -93,10 +93,20 @@ export async function getBooksInList(req: Request, res: Response) {
 }
 
 export async function joinGroup(req: Request, res: Response) {
-  const groupId = String(req.body.groupId);
+  const groupId = String(req.params.groupId);
   try {
-    await userService.joinGroup(String(req.params.id), groupId);
+    await userService.joinGroup({ userId: String(req.params.id), groupId });
     res.json({ joined: true, groupId });
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
+export async function leaveGroup(req: Request, res: Response) {
+  const groupId = String(req.params.groupId);
+  try {
+    await userService.leaveGroup({ userId: String(req.params.id), groupId });
+    res.json({ left: true, groupId });
   } catch (err) {
     handleError(res, err);
   }

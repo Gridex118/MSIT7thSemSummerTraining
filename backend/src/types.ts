@@ -129,3 +129,8 @@ export type ChatType = {
   content: string;
   sentAt: string;
 };
+
+export type UserGroupInputType = {
+  userId: string;
+  groupId: string;
+};

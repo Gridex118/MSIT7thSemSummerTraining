@@ -10,6 +10,7 @@ import type {
   RegisterInputType,
   LoginInputType,
   BookInputType,
+  UserGroupInputType,
 } from "../types.ts";
 
 const SALT_ROUNDS = 10;
@@ -105,11 +106,11 @@ export async function getBooksInList(id: string) {
   );
 }
 
-export async function joinGroup(id: string, groupId: string) {
-  if (!isValidObjectId(id) || !isValidObjectId(groupId))
+export async function joinGroup({ userId, groupId }: UserGroupInputType) {
+  if (!isValidObjectId(userId) || !isValidObjectId(groupId))
     throw new ServiceError(400, "Invalid user id or group id");
   const [user, group] = await Promise.all([
-    User.exists({ _id: id }),
+    User.exists({ _id: userId }),
     Group.findById(groupId),
   ]);
   if (!user || !group) throw new ServiceError(404, "User or group not found");
@@ -117,7 +118,23 @@ export async function joinGroup(id: string, groupId: string) {
     throw new ServiceError(403, "This group is private");
   await Group.updateOne(
     { _id: groupId },
-    { $addToSet: { members: new Types.ObjectId(id) } },
+    { $addToSet: { members: new Types.ObjectId(userId) } },
+  );
+}
+
+export async function leaveGroup({ userId, groupId }: UserGroupInputType) {
+  if (!isValidObjectId(userId) || !isValidObjectId(groupId))
+    throw new ServiceError(400, "Invalid user id or group id");
+  const group = await Group.findById(groupId).select("owner members");
+  if (!group) throw new ServiceError(404, "Group not found");
+  if (String(group.owner) === userId)
+    throw new ServiceError(403, "The group owner cannot leave the group");
+  const isMember = group.members.some((member) => String(member) === userId);
+  if (!isMember)
+    throw new ServiceError(404, "You are not a member of this group");
+  await Group.updateOne(
+    { _id: groupId },
+    { $pull: { members: new Types.ObjectId(userId) } },
   );
 }
 
