@@ -6,6 +6,8 @@ import useAuth from "../useAuth";
 import type { SearchResultType } from "./types";
 import type { OpenLibraryBookType } from "@backend/types";
 
+import OpenLibraryLogo from "../../assets/openlibrary-logo-tighter.svg?react";
+
 const SEARCH_URL = "/v1/openLibrary/search";
 
 function SearchBar({ onSearch }: { onSearch: (query: string) => void }) {
@@ -147,6 +149,12 @@ export default function BookSearchPage() {
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"
       />
       <main className="container mx-auto my-24 flex max-w-200 flex-col gap-6 p-4 text-white sm:p-0 md:p-4">
+        <div className="flex items-center justify-center gap-2 text-blue-200 dark:text-gray-400">
+          <p>Powered By</p>
+          <a href="openlibrary.org">
+            <OpenLibraryLogo className="w-32" />
+          </a>
+        </div>
         <SearchBar onSearch={handleSearch} />
         {loadingResults ? (
           <div className="m-auto flex items-center gap-4">
