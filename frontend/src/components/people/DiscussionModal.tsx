@@ -13,6 +13,7 @@ function toCommentType(chat: ChatType): CommentType {
   return {
     id: chat._id,
     user: chat.sender.username,
+    userId: chat.sender._id,
     message: chat.content,
     date: chat.sentAt,
   };
@@ -29,7 +30,9 @@ function CommentCard({ comment }: { comment: CommentType }) {
     <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-xl border border-blue-300 p-4 dark:border-gray-700">
       <CommentAvatar />
       <div className="flex items-baseline gap-2">
-        <p className="text-sm font-bold">{comment.user}</p>
+        <Link to={`/user/${comment.userId}`} className="text-sm font-bold">
+          {comment.user}
+        </Link>
         <p className="text-xs font-semibold dark:text-gray-400">
           {comment.date}
         </p>
