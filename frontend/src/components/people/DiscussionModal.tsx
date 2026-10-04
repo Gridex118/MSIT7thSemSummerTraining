@@ -1,4 +1,4 @@
-import type { CommentType } from "./types";
+import type { CommentType, DiscussionType } from "./types";
 import React, {
   useEffect,
   useState,
@@ -40,7 +40,7 @@ function CommentCard({ comment }: { comment: CommentType }) {
 }
 
 type DiscussionModalProps = {
-  discussionId: string;
+  discussion: DiscussionType;
   onClose: () => void;
 };
 
@@ -111,10 +111,7 @@ function CommentInput({ discussionId, setLastMessage }: CommentInputProps) {
   );
 }
 
-export function DiscussionModal({
-  discussionId,
-  onClose,
-}: DiscussionModalProps) {
+export function DiscussionModal({ discussion, onClose }: DiscussionModalProps) {
   const [chats, setChats] = useState<ChatType[]>([]);
   const [lastMessage, setLastMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -132,7 +129,7 @@ export function DiscussionModal({
     let cancelled = false;
     async function loadChats() {
       try {
-        const res = await fetch(`/v1/discussions/${discussionId}/chats`);
+        const res = await fetch(`/v1/discussions/${discussion.id}/chats`);
         if (!res.ok)
           throw new Error(`Fetch chats failed with status ${res.status}`);
         const data: ChatType[] = await res.json();
@@ -148,7 +145,7 @@ export function DiscussionModal({
     return () => {
       cancelled = true;
     };
-  }, [discussionId, lastMessage]);
+  }, [discussion.id, lastMessage]);
 
   return (
     <div
@@ -162,7 +159,12 @@ export function DiscussionModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
-          <h2 className="text-lg font-bold md:text-xl">Discussion</h2>
+          <div>
+            <h2 className="text-lg font-bold md:text-xl">{discussion.title}</h2>
+            <p className="text-sm text-blue-200 dark:text-gray-400">
+              On {discussion.bookTitle}
+            </p>
+          </div>
           <button
             type="button"
             aria-label="Close"
@@ -193,7 +195,7 @@ export function DiscussionModal({
           ))}
         </section>
         <CommentInput
-          discussionId={discussionId}
+          discussionId={discussion.id}
           setLastMessage={setLastMessage}
         />
       </div>

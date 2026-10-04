@@ -229,7 +229,7 @@ export default function GroupPage() {
       <Footer />
       {selected && (
         <DiscussionModal
-          discussionId={selected.id}
+          discussion={selected}
           onClose={() => setSelected(null)}
         />
       )}
