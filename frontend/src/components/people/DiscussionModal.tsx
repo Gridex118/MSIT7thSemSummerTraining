@@ -42,6 +42,7 @@ function CommentCard({ comment }: { comment: CommentType }) {
 type DiscussionModalProps = {
   discussion: DiscussionType;
   onClose: () => void;
+  isMember?: boolean;
 };
 
 const DISCUSSIONS_URL = "/v1/discussions";
@@ -52,17 +53,7 @@ type CommentInputProps = {
 function CommentInput({ discussionId, setLastMessage }: CommentInputProps) {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const { userId, authFetch } = useAuth();
-
-  if (!userId)
-    return (
-      <p className="text-center text-blue-100 dark:text-gray-200">
-        <Link to="/login" className="cursor-pointer font-semibold text-white">
-          Log in
-        </Link>{" "}
-        to add comments
-      </p>
-    );
+  const { authFetch } = useAuth();
 
   const handleSubmit: SubmitEventHandler = async (e) => {
     e.preventDefault();
@@ -111,11 +102,16 @@ function CommentInput({ discussionId, setLastMessage }: CommentInputProps) {
   );
 }
 
-export function DiscussionModal({ discussion, onClose }: DiscussionModalProps) {
+export function DiscussionModal({
+  discussion,
+  onClose,
+  isMember,
+}: DiscussionModalProps) {
   const [chats, setChats] = useState<ChatType[]>([]);
   const [lastMessage, setLastMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { userId } = useAuth();
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -194,10 +190,28 @@ export function DiscussionModal({ discussion, onClose }: DiscussionModalProps) {
             <CommentCard key={chat._id} comment={toCommentType(chat)} />
           ))}
         </section>
-        <CommentInput
-          discussionId={discussion.id}
-          setLastMessage={setLastMessage}
-        />
+        {userId ? (
+          isMember ? (
+            <CommentInput
+              discussionId={discussion.id}
+              setLastMessage={setLastMessage}
+            />
+          ) : (
+            <p className="text-center text-blue-200 dark:text-gray-400">
+              Join Group to Add Comments
+            </p>
+          )
+        ) : (
+          <p className="text-center text-blue-100 dark:text-gray-200">
+            <Link
+              to="/login"
+              className="cursor-pointer font-semibold text-white"
+            >
+              Log in
+            </Link>{" "}
+            to add comments
+          </p>
+        )}
       </div>
     </div>
   );

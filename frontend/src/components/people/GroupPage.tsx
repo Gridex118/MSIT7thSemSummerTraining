@@ -155,7 +155,7 @@ export default function GroupPage() {
   const [refreshCount, setRefreshCount] = useState(0);
   const isMemberOfGroup =
     userId === group?.ownerId ||
-    group?.members.find(({ _id }) => _id === userId);
+    !!group?.members.find(({ _id }) => _id === userId);
 
   useEffect(() => {
     if (!groupId) return;
@@ -198,14 +198,20 @@ export default function GroupPage() {
                 discussions={group.discussions.map(toDiscussionType)}
                 onSelect={setSelected}
               />
-              {isMemberOfGroup ? (
-                <button
-                  type="button"
-                  className="w-fit rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white shadow-md transition md:text-base dark:bg-black [&:active,&:hover]:-translate-y-1"
-                  onClick={() => setShowDiscussionCreateModal(true)}
-                >
-                  Start New Discussion
-                </button>
+              {userId ? (
+                isMemberOfGroup ? (
+                  <button
+                    type="button"
+                    className="w-fit rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white shadow-md transition md:text-base dark:bg-black [&:active,&:hover]:-translate-y-1"
+                    onClick={() => setShowDiscussionCreateModal(true)}
+                  >
+                    Start New Discussion
+                  </button>
+                ) : (
+                  <p className="text-sm text-gray-200 dark:text-gray-300">
+                    Join Group to Start a New Discussion
+                  </p>
+                )
               ) : (
                 <p className="text-gray-200 dark:text-gray-300">
                   <Link className="font-semibold text-white" to="/login">
@@ -231,6 +237,7 @@ export default function GroupPage() {
         <DiscussionModal
           discussion={selected}
           onClose={() => setSelected(null)}
+          isMember={isMemberOfGroup}
         />
       )}
     </div>
