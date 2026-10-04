@@ -1,6 +1,7 @@
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
 import useAuth from "../useAuth";
+import useTheme from "../useTheme";
 import type { ProfileResponseType } from "@backend/types";
 import type { BookType } from "../books/types";
 import type { UserType, GroupType } from "./types";
@@ -168,6 +169,7 @@ function UserBookList({ name, books }: { name: string; books: BookType[] }) {
 export default function UserPage() {
   const { userId: paramsUserId } = useParams();
   const { userId } = useAuth();
+  const { darkMode } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<UserType | null>(null);
   const navbarLinks: NavbarLinkType[] = [
@@ -205,7 +207,9 @@ export default function UserPage() {
   }, [paramsUserId]);
 
   return (
-    <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
+    <div
+      className={`font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700 ${darkMode && "dark"}`}
+    >
       <Navbar
         links={navbarLinks}
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"

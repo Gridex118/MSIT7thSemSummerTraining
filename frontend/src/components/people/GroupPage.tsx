@@ -7,6 +7,7 @@ import type { GroupDetailsType } from "@backend/types";
 import Footer from "../common/Footer";
 import { Link, useParams } from "react-router";
 import { CreateDiscussionModal } from "./CreateDiscussionModal";
+import useTheme from "../useTheme";
 
 const GROUP_URL = "/v1/groups";
 
@@ -140,6 +141,7 @@ function DiscussionList({
 export default function GroupPage() {
   const { groupId } = useParams();
   const { userId } = useAuth();
+  const { darkMode } = useTheme();
   const navbarLinks: NavbarLinkType[] = [
     userId ? null : { label: "Home", href: "/" },
     userId
@@ -181,7 +183,9 @@ export default function GroupPage() {
   }, [groupId, showDiscussionCreateModel, refreshCount]);
 
   return (
-    <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
+    <div
+      className={`font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700 ${darkMode && "dark"}`}
+    >
       <Navbar
         links={navbarLinks}
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"

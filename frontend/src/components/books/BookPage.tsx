@@ -4,6 +4,7 @@ import { useState, useEffect, type SubmitEventHandler } from "react";
 import { Link, useParams } from "react-router";
 import BookDescription from "./BookDescription";
 import useAuth from "../useAuth";
+import useTheme from "../useTheme";
 import type { BookType, ReadingStatusType } from "./types";
 import type {
   OpenLibraryEditionType,
@@ -349,6 +350,7 @@ function toBookType(
 
 export default function BookPage() {
   const { userId } = useAuth();
+  const { darkMode } = useTheme();
   const navbarLinks: NavbarLinkType[] = [
     userId ? null : { label: "Home", href: "/" },
     userId
@@ -391,7 +393,9 @@ export default function BookPage() {
   }, [workKey, editionKey]);
 
   return (
-    <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
+    <div
+      className={`font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700 ${darkMode && "dark"}`}
+    >
       <Navbar links={navbarLinks} />
       {isLoading ? (
         <div className="m-auto flex items-center gap-4 text-white">

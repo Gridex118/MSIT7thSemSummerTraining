@@ -1,5 +1,6 @@
 import { Link, useNavigate, Navigate } from "react-router";
 import useAuth from "./useAuth";
+import useTheme from "./useTheme";
 import Navbar, { type NavbarLinkType } from "./common/Navbar";
 import Footer from "./common/Footer";
 import React, {
@@ -140,13 +141,16 @@ function LoginFormContainer() {
 }
 
 export default function LoginPage() {
+  const { darkMode } = useTheme();
   const navbarLinks: NavbarLinkType[] = [
     { label: "Home", href: "/" },
     { label: "Books", href: "/books" },
   ];
 
   return (
-    <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
+    <div
+      className={`font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700 ${darkMode && "dark"}`}
+    >
       <Navbar
         links={navbarLinks}
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"
