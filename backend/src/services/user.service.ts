@@ -6,6 +6,7 @@ import { UserBook } from "../models/user_book.model.ts";
 import { Group } from "../models/group.model.ts";
 import { ServiceError } from "../errors.ts";
 import { signToken } from "../middlewares/auth.middleware.ts";
+import { uploadAvatarImage } from "./cloudinary.service.ts";
 import type {
   RegisterInputType,
   LoginInputType,
@@ -17,7 +18,6 @@ import type {
 
 const SALT_ROUNDS = 10;
 const DUMMY_HASH = bcrypt.hashSync("dummy password", SALT_ROUNDS);
-const AVATAR_PATH = "/uploads/avatars";
 
 function assertValidId(id: string, label: string) {
   if (!isValidObjectId(id)) throw new ServiceError(400, `Invalid ${label}`);
@@ -140,15 +140,12 @@ export async function leaveGroup({ userId, groupId }: UserGroupInputType) {
   );
 }
 
-export async function updateAvatar(id: string, filename: string) {
+export async function updateAvatar(id: string, file: Buffer) {
   assertValidId(id, "user id");
-  const user = await User.findByIdAndUpdate(
-    id,
-    { avatar: `${AVATAR_PATH}/${filename}` },
-    { new: true },
-  );
-  if (!user) throw new ServiceError(404, "User not found");
-  return user;
+  const exists = await User.exists({ _id: id });
+  if (!exists) throw new ServiceError(404, "User not found");
+  const avatar = await uploadAvatarImage(file, "users", id);
+  return User.findByIdAndUpdate(id, { avatar }, { new: true });
 }
 
 export async function getUserProfile(id: string): Promise<ProfileResponseType> {

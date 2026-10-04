@@ -120,7 +120,7 @@ export async function updateAvatar(req: Request, res: Response) {
   try {
     const user = await userService.updateAvatar(
       String(req.params.id),
-      req.file.filename,
+      req.file.buffer,
     );
     res.json(user);
   } catch (err) {

@@ -8,7 +8,12 @@ import type { UserType, GroupType } from "./types";
 
 import EditPenSvg from "../../assets/edit-pen.svg?react";
 
-import { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  type ChangeEventHandler,
+  type SetStateAction,
+} from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
 const PROFILE_URL = "/v1/users";
@@ -42,16 +47,45 @@ function toUserType(profile: ProfileResponseType): UserType {
 function UserAvatar({
   userOwnProfile,
   avatar,
+  setAvatar,
 }: {
   userOwnProfile: boolean;
   avatar?: string;
+  setAvatar: React.Dispatch<SetStateAction<string | undefined>>;
 }) {
+  const { authFetch, userId } = useAuth();
+
+  const handleAvatarChange: ChangeEventHandler<HTMLInputElement> = async (
+    e,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file || !userOwnProfile) return;
+    const formData = new FormData();
+    formData.append("avatar", file);
+    try {
+      const res = await authFetch(`/v1/users/${userId}/avatar`, {
+        method: "PATCH",
+        body: formData,
+      });
+      if (res.status !== 200)
+        throw new Error(`Avatar upload failed with status ${res.status}`);
+      const user: { avatar: string | null } = await res.json();
+      setAvatar(user.avatar ?? undefined);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="group relative aspect-square w-28 shrink-0 overflow-clip rounded-full">
       {userOwnProfile && (
         <div className="absolute top-0 left-0 grid h-full w-full place-items-center rounded-full bg-black/60 text-transparent group-hover:z-999 group-active:z-999">
           <EditPenSvg className="absolute size-8 fill-white" />
-          <input className="absolute size-full" type="file"></input>
+          <input
+            className="absolute size-full"
+            type="file"
+            onChange={handleAvatarChange}
+          ></input>
         </div>
       )}
       {avatar ? (
@@ -70,12 +104,17 @@ function UserAvatar({
 function UserProfile({ user }: { user: UserType }) {
   const { userId, logout } = useAuth();
   const { userId: paramsUserId } = useParams();
+  const [avatar, setAvatar] = useState<string | undefined>(user.avatar);
   const userOwnProfile = !!userId && userId == paramsUserId;
   const navigate = useNavigate();
 
   return (
     <section className="flex flex-col items-center gap-4 md:col-start-2 md:row-start-1 md:flex-row md:gap-6">
-      <UserAvatar userOwnProfile={userOwnProfile} avatar={user.avatar} />
+      <UserAvatar
+        userOwnProfile={userOwnProfile}
+        avatar={avatar}
+        setAvatar={setAvatar}
+      />
       <div className="flex flex-col gap-1">
         <h1 className="text-center text-xl font-bold md:text-left md:text-2xl">
           {user.username}
