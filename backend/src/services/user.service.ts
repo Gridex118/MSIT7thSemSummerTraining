@@ -11,6 +11,8 @@ import type {
   LoginInputType,
   BookInputType,
   UserGroupInputType,
+  ProfileResponseType,
+  ProfileBookResponseType,
 } from "../types.ts";
 
 const SALT_ROUNDS = 10;
@@ -149,19 +151,39 @@ export async function updateAvatar(id: string, filename: string) {
   return user;
 }
 
-export async function getUserProfile(id: string) {
+export async function getUserProfile(id: string): Promise<ProfileResponseType> {
   assertValidId(id, "user id");
-  const user = await User.findById(id);
+  const user = await User.findById(id).lean();
   if (!user) throw new ServiceError(404, "User not found");
   const groupDocs = await Group.find({ members: user._id })
     .select("name members")
     .lean();
-  const groups = groupDocs.map(({ members, ...rest }) => ({
+  const groups = groupDocs.map(({ _id, members, ...rest }) => ({
+    _id: String(_id),
     ...rest,
     memberCount: members.length,
   }));
-  const books = await UserBook.find({ user: user._id }).populate("book");
-  return { ...user.toObject(), groups, books };
+  const bookDocs = await UserBook.find({
+    user: user._id,
+  })
+    .select("_id book readStatus")
+    .populate<{ book: ProfileBookResponseType }>(
+      "book",
+      "title author workKey editionKey",
+    )
+    .lean();
+  const books = bookDocs.map(({ _id, book, readStatus }) => ({
+    _id: String(_id),
+    book,
+    readStatus,
+  }));
+  return {
+    ...user,
+    avatar: user.avatar ?? undefined,
+    _id: String(user._id),
+    groups,
+    books,
+  };
 }
 
 export async function getAllUsers() {

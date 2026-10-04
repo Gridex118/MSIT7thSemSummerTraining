@@ -4,6 +4,7 @@ export type GroupType = { slug: string; name: string; members: number };
 
 export type UserType = {
   name: string;
+  avatar?: string;
   username: string;
   groups: GroupType[];
   books: BookType[];

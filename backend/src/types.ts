@@ -80,19 +80,22 @@ export type CreateChatInputType = {
   content: string;
 };
 
+export type ProfileBookResponseType = {
+  title: string;
+  author?: string;
+  workKey: string;
+  editionKey: string;
+};
+
 export type ProfileResponseType = {
   _id: string;
   name: string;
+  avatar?: string;
   username: string;
   groups: { _id: string; name: string; memberCount: number }[];
   books: {
     _id: string;
-    book: {
-      title: string;
-      author?: string;
-      workKey: string;
-      editionKey: string;
-    };
+    book: ProfileBookResponseType;
     readStatus: string;
   }[];
 };
