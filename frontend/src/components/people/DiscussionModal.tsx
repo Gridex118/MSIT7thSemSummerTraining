@@ -1,4 +1,4 @@
-import type { CommentType } from "./types";
+import type { CommentType, DiscussionType } from "./types";
 import React, {
   useEffect,
   useState,
@@ -13,6 +13,7 @@ function toCommentType(chat: ChatType): CommentType {
   return {
     id: chat._id,
     user: chat.sender.username,
+    userId: chat.sender._id,
     message: chat.content,
     date: chat.sentAt,
   };
@@ -29,7 +30,9 @@ function CommentCard({ comment }: { comment: CommentType }) {
     <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-xl border border-blue-300 p-4 dark:border-gray-700">
       <CommentAvatar />
       <div className="flex items-baseline gap-2">
-        <p className="text-sm font-bold">{comment.user}</p>
+        <Link to={`/user/${comment.userId}`} className="text-sm font-bold">
+          {comment.user}
+        </Link>
         <p className="text-xs font-semibold dark:text-gray-400">
           {comment.date}
         </p>
@@ -40,8 +43,9 @@ function CommentCard({ comment }: { comment: CommentType }) {
 }
 
 type DiscussionModalProps = {
-  discussionId: string;
+  discussion: DiscussionType;
   onClose: () => void;
+  isMember?: boolean;
 };
 
 const DISCUSSIONS_URL = "/v1/discussions";
@@ -52,17 +56,7 @@ type CommentInputProps = {
 function CommentInput({ discussionId, setLastMessage }: CommentInputProps) {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const { userId, authFetch } = useAuth();
-
-  if (!userId)
-    return (
-      <p className="text-center text-blue-100 dark:text-gray-200">
-        <Link to="/login" className="cursor-pointer font-semibold text-white">
-          Log in
-        </Link>{" "}
-        to add comments
-      </p>
-    );
+  const { authFetch } = useAuth();
 
   const handleSubmit: SubmitEventHandler = async (e) => {
     e.preventDefault();
@@ -112,13 +106,15 @@ function CommentInput({ discussionId, setLastMessage }: CommentInputProps) {
 }
 
 export function DiscussionModal({
-  discussionId,
+  discussion,
   onClose,
+  isMember,
 }: DiscussionModalProps) {
   const [chats, setChats] = useState<ChatType[]>([]);
   const [lastMessage, setLastMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { userId } = useAuth();
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -132,7 +128,7 @@ export function DiscussionModal({
     let cancelled = false;
     async function loadChats() {
       try {
-        const res = await fetch(`/v1/discussions/${discussionId}/chats`);
+        const res = await fetch(`/v1/discussions/${discussion.id}/chats`);
         if (!res.ok)
           throw new Error(`Fetch chats failed with status ${res.status}`);
         const data: ChatType[] = await res.json();
@@ -148,7 +144,7 @@ export function DiscussionModal({
     return () => {
       cancelled = true;
     };
-  }, [discussionId, lastMessage]);
+  }, [discussion.id, lastMessage]);
 
   return (
     <div
@@ -162,7 +158,12 @@ export function DiscussionModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
-          <h2 className="text-lg font-bold md:text-xl">Discussion</h2>
+          <div>
+            <h2 className="text-lg font-bold md:text-xl">{discussion.title}</h2>
+            <p className="text-sm text-blue-200 dark:text-gray-400">
+              On {discussion.bookTitle}
+            </p>
+          </div>
           <button
             type="button"
             aria-label="Close"
@@ -192,10 +193,28 @@ export function DiscussionModal({
             <CommentCard key={chat._id} comment={toCommentType(chat)} />
           ))}
         </section>
-        <CommentInput
-          discussionId={discussionId}
-          setLastMessage={setLastMessage}
-        />
+        {userId ? (
+          isMember ? (
+            <CommentInput
+              discussionId={discussion.id}
+              setLastMessage={setLastMessage}
+            />
+          ) : (
+            <p className="text-center text-blue-200 dark:text-gray-400">
+              Join Group to Add Comments
+            </p>
+          )
+        ) : (
+          <p className="text-center text-blue-100 dark:text-gray-200">
+            <Link
+              to="/login"
+              className="cursor-pointer font-semibold text-white"
+            >
+              Log in
+            </Link>{" "}
+            to add comments
+          </p>
+        )}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import Navbar, { type NavbarLinkType } from "../common/Navbar";
 import Footer from "../common/Footer";
 import useAuth from "../useAuth";
+import useTheme from "../useTheme";
 import type { SearchResultType } from "./types";
 import type { OpenLibraryBookType } from "@backend/types";
 
@@ -93,6 +94,7 @@ function SearchResults({ results }: { results: SearchResultType[] | null }) {
 
 export default function BookSearchPage() {
   const { userId } = useAuth();
+  const { darkMode } = useTheme();
   const navbarLinks: NavbarLinkType[] = [
     userId ? null : { label: "Home", href: "/" },
     userId
@@ -143,7 +145,9 @@ export default function BookSearchPage() {
   }, [query]);
 
   return (
-    <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
+    <div
+      className={`font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700 ${darkMode && "dark"}`}
+    >
       <Navbar
         links={navbarLinks}
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"

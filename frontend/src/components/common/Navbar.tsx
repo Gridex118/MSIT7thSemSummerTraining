@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router";
 import type { SetStateAction } from "react";
+import useTheme from "../useTheme";
 
 function PageLogo() {
+  const { toggleTheme } = useTheme();
+
   return (
-    <div className="navbar__logo rounded-full bg-blue-700/90 px-4 py-1 text-xl text-white hover:shadow-md hover:shadow-blue-600/80 dark:bg-white dark:font-thin dark:text-black dark:hover:shadow-gray-300/50">
+    <button
+      className="navbar__logo rounded-full bg-blue-700/90 px-4 py-1 text-xl text-white hover:shadow-md hover:shadow-blue-600/80 dark:bg-white dark:font-thin dark:text-black dark:hover:shadow-gray-300/50"
+      onClick={toggleTheme}
+    >
       <p>
         <span className="font-bold">__BOOKS</span>
         <span className="font-normal">/GROUP</span>
       </p>
-    </div>
+    </button>
   );
 }
 

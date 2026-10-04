@@ -4,6 +4,7 @@ import Footer from "./common/Footer";
 import useAuth from "./useAuth";
 import { useState, type SubmitEventHandler } from "react";
 import type { RegisterInputType } from "@backend/types";
+import useTheme from "./useTheme";
 
 const REGISTER_URL = "/v1/users";
 type RegistrationResType = { token: string; user: { _id: string } };
@@ -181,13 +182,16 @@ function RegistrationFormContainer() {
 }
 
 export default function RegistrationPage() {
+  const { darkMode } = useTheme();
   const navbarLinks: NavbarLinkType[] = [
     { label: "Home", href: "/" },
     { label: "Books", href: "/books" },
   ];
 
   return (
-    <div className="font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700">
+    <div
+      className={`font-jetbrains-mono flex min-h-screen flex-col bg-blue-500 dark:bg-gray-700 ${darkMode && "dark"}`}
+    >
       <Navbar
         links={navbarLinks}
         forcesdBGColor="md:bg-blue-500 md:dark:bg-black"
